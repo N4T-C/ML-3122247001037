@@ -13,7 +13,7 @@ PUBLIC INTERFACE
 ----------------
 The notebook should call exactly ONE function from this module:
 
-    >>> eda_results = classification_eda(df, target_col="Loan_Status")
+    >>> eda_results = classification_eda(df, target_column="Loan_Status")
 
 Everything else in this module is an internal implementation detail.
 Functions prefixed with a single underscore (_) are private by convention.
@@ -387,7 +387,7 @@ def _summary_statistics(df, numerical_cols, categorical_cols):
 # influences which evaluation metrics to use (accuracy alone is misleading).
 # =============================================================================
 
-def _class_distribution(df, target_col, figures_path):
+def _class_distribution(df, target_column, figures_path):
     """
     Visualize and analyze the target class distribution.
 
@@ -396,7 +396,7 @@ def _class_distribution(df, target_col, figures_path):
     Parameters
     ----------
     df : pd.DataFrame
-    target_col : str
+    target_column : str
         Name of the target (label) column.
     figures_path : str
 
@@ -409,8 +409,8 @@ def _class_distribution(df, target_col, figures_path):
     print("5. CLASS DISTRIBUTION")
     print("=" * 60)
 
-    class_counts = df[target_col].value_counts()
-    class_pct    = df[target_col].value_counts(normalize=True) * 100
+    class_counts = df[target_column].value_counts()
+    class_pct    = df[target_column].value_counts(normalize=True) * 100
 
     for cls in class_counts.index:
         print(f"  {str(cls):<25}: {class_counts[cls]:>5} samples  ({class_pct[cls]:.1f}%)")
@@ -446,9 +446,9 @@ def _class_distribution(df, target_col, figures_path):
             fontfamily=_FONT_FAMILY,
         )
 
-    ax.set_xlabel(target_col)
+    ax.set_xlabel(target_column)
     ax.set_ylabel("Count")
-    ax.set_title(f"Class Distribution -- {target_col}")
+    ax.set_title(f"Class Distribution -- {target_column}")
     ax.set_ylim(0, max(class_counts.values) * 1.2)
     plt.tight_layout()
     _save_figure(fig, figures_path, "class_distribution")
@@ -538,7 +538,7 @@ def _histograms(df, numerical_cols, figures_path):
 # If yes, that feature is likely informative for the model.
 # =============================================================================
 
-def _boxplots(df, numerical_cols, target_col, figures_path):
+def _boxplots(df, numerical_cols, target_column, figures_path):
     """
     Plot box plots for each numerical feature, grouped by target class.
 
@@ -546,7 +546,7 @@ def _boxplots(df, numerical_cols, target_col, figures_path):
     ----------
     df : pd.DataFrame
     numerical_cols : list of str
-    target_col : str
+    target_column : str
     figures_path : str
     """
     if not numerical_cols:
@@ -567,19 +567,19 @@ def _boxplots(df, numerical_cols, target_col, figures_path):
 
     # Convert target to string to ensure consistent categorical axis behavior
     plot_df = df.copy()
-    plot_df[target_col] = plot_df[target_col].astype(str)
+    plot_df[target_column] = plot_df[target_column].astype(str)
 
     for i, col in enumerate(numerical_cols):
         sns.boxplot(
             data=plot_df,
-            x=target_col,
+            x=target_column,
             y=col,
             ax=axes[i],
             palette="Set2",
         )
-        axes[i].set_xlabel(target_col)
+        axes[i].set_xlabel(target_column)
         axes[i].set_ylabel(col)
-        axes[i].set_title(f"{col}  by  {target_col}")
+        axes[i].set_title(f"{col}  by  {target_column}")
 
     for j in range(len(numerical_cols), len(axes)):
         axes[j].set_visible(False)
@@ -675,7 +675,7 @@ def _correlation_heatmap(df, numerical_cols, figures_path):
 # rather than showing all combinations (which can be overwhelming).
 # =============================================================================
 
-def _scatterplots(df, numerical_cols, target_col, figures_path):
+def _scatterplots(df, numerical_cols, target_column, figures_path):
     """
     Plot scatter plots for the top feature pairs, colored by target class.
 
@@ -686,7 +686,7 @@ def _scatterplots(df, numerical_cols, target_col, figures_path):
     ----------
     df : pd.DataFrame
     numerical_cols : list of str
-    target_col : str
+    target_column : str
     figures_path : str
     """
     if len(numerical_cols) < 2:
@@ -719,13 +719,13 @@ def _scatterplots(df, numerical_cols, target_col, figures_path):
     axes = axes.flatten()
 
     # Assign a consistent color to each unique class value
-    target_classes = df[target_col].astype(str).unique()
+    target_classes = df[target_column].astype(str).unique()
     palette        = sns.color_palette("Set2", len(target_classes))
     color_map      = dict(zip(target_classes, palette))
 
     for idx, (col_x, col_y, corr_val) in enumerate(pairs):
         for cls in target_classes:
-            mask = df[target_col].astype(str) == cls
+            mask = df[target_column].astype(str) == cls
             axes[idx].scatter(
                 df.loc[mask, col_x],
                 df.loc[mask, col_y],
@@ -738,7 +738,7 @@ def _scatterplots(df, numerical_cols, target_col, figures_path):
         axes[idx].set_xlabel(col_x)
         axes[idx].set_ylabel(col_y)
         axes[idx].set_title(f"{col_x} vs {col_y}\n(r = {corr_val:.2f})")
-        axes[idx].legend(title=target_col, fontsize=_FONT_SIZE - 3)
+        axes[idx].legend(title=target_column, fontsize=_FONT_SIZE - 3)
 
     plt.suptitle(
         "Scatter Plots -- Top Correlated Feature Pairs by Class",
@@ -763,7 +763,7 @@ def _scatterplots(df, numerical_cols, target_col, figures_path):
 # 10+ columns becomes unreadable and very slow to render.
 # =============================================================================
 
-def _pairplot(df, numerical_cols, target_col, figures_path):
+def _pairplot(df, numerical_cols, target_column, figures_path):
     """
     Plot a pairwise scatter plot grid colored by target class.
 
@@ -773,7 +773,7 @@ def _pairplot(df, numerical_cols, target_col, figures_path):
     ----------
     df : pd.DataFrame
     numerical_cols : list of str
-    target_col : str
+    target_column : str
     figures_path : str
     """
     if len(numerical_cols) < 2:
@@ -785,12 +785,12 @@ def _pairplot(df, numerical_cols, target_col, figures_path):
 
     _apply_plot_style()
 
-    plot_df = df[cols_to_plot + [target_col]].dropna().copy()
-    plot_df[target_col] = plot_df[target_col].astype(str)
+    plot_df = df[cols_to_plot + [target_column]].dropna().copy()
+    plot_df[target_column] = plot_df[target_column].astype(str)
 
     g = sns.pairplot(
         plot_df,
-        hue=target_col,
+        hue=target_column,
         palette="Set2",
         diag_kind="kde",          # KDE on the diagonal instead of histogram
         plot_kws={"alpha": 0.6, "s": 20},
@@ -1004,7 +1004,7 @@ def _generate_observations(overview, missing_summary, duplicate_summary,
 #                  reader focus on the ML workflow, not the EDA details.
 # =============================================================================
 
-def classification_eda(df, target_col, figures_path="../figures/"):
+def classification_eda(df, target_column, figures_path="../figures/"):
     """
     Perform complete Exploratory Data Analysis for a tabular classification dataset.
 
@@ -1032,7 +1032,7 @@ def classification_eda(df, target_col, figures_path="../figures/"):
         The RAW dataset loaded directly from CSV.
         Do NOT preprocess the data before running EDA.
         EDA must reflect the true state of the raw data.
-    target_col : str
+    target_column : str
         Name of the column containing the class label (target variable).
     figures_path : str, optional
         Directory where all EDA plots will be saved as EPS files.
@@ -1048,8 +1048,8 @@ def classification_eda(df, target_col, figures_path="../figures/"):
 
     Example
     -------
-    >>> eda_results = classification_eda(df, target_col="Loan_Status")
-    >>> eda_results = classification_eda(df, target_col="Outcome",
+    >>> eda_results = classification_eda(df, target_column="Loan_Status")
+    >>> eda_results = classification_eda(df, target_column="Outcome",
     ...                                  figures_path="../figures/")
 
     Notes
@@ -1063,14 +1063,14 @@ def classification_eda(df, target_col, figures_path="../figures/"):
     print()
     print("=" * 60)
     print("  CLASSIFICATION EDA")
-    print(f"  Target Column : {target_col}")
+    print(f"  Target Column : {target_column}")
     print(f"  Figures Path  : {figures_path}")
     print("=" * 60)
     print()
 
     # -- Auto-detect column types ----------------------------------------------
     # We exclude the target column so it does not appear in feature analyses.
-    feature_cols     = [col for col in df.columns if col != target_col]
+    feature_cols     = [col for col in df.columns if col != target_column]
     numerical_cols   = df[feature_cols].select_dtypes(include=["number"]).columns.tolist()
     categorical_cols = df[feature_cols].select_dtypes(
         include=["object", "category"]
@@ -1093,7 +1093,7 @@ def classification_eda(df, target_col, figures_path="../figures/"):
     _summary_statistics(df, numerical_cols, categorical_cols)
 
     # -- Step 5 ---------------------------------------------------------------
-    class_dist = _class_distribution(df, target_col, figures_path)
+    class_dist = _class_distribution(df, target_column, figures_path)
 
     # -- Step 6 ---------------------------------------------------------------
     print("  Generating histograms...")
@@ -1101,7 +1101,7 @@ def classification_eda(df, target_col, figures_path="../figures/"):
 
     # -- Step 7 ---------------------------------------------------------------
     print("  Generating box plots...")
-    _boxplots(df, numerical_cols, target_col, figures_path)
+    _boxplots(df, numerical_cols, target_column, figures_path)
 
     # -- Step 8 ---------------------------------------------------------------
     print("  Generating correlation heatmap...")
@@ -1109,11 +1109,11 @@ def classification_eda(df, target_col, figures_path="../figures/"):
 
     # -- Step 9 ---------------------------------------------------------------
     print("  Generating scatter plots...")
-    _scatterplots(df, numerical_cols, target_col, figures_path)
+    _scatterplots(df, numerical_cols, target_column, figures_path)
 
     # -- Step 10 --------------------------------------------------------------
     print("  Generating pairplot (limited to first 5 numerical columns)...")
-    _pairplot(df, numerical_cols, target_col, figures_path)
+    _pairplot(df, numerical_cols, target_column, figures_path)
 
     # -- Step 11 --------------------------------------------------------------
     outlier_summary = _outlier_analysis(df, numerical_cols)
