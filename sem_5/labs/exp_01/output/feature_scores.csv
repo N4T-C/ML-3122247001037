@@ -1,0 +1,12 @@
+Rank,Feature,Score
+1,CoapplicantIncome,11342.0416
+2,ApplicantIncome,93.905
+3,LoanAmount,39.2115
+4,Credit_History,25.9989
+5,Education,3.5405
+6,Loan_Amount_Term,3.2673
+7,Married,1.7824
+8,Property_Area,0.3778
+9,Dependents,0.086
+10,Gender,0.0362
+11,Self_Employed,0.0073
