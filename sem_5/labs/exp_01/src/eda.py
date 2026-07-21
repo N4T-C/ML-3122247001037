@@ -10,13 +10,23 @@ Provides ONE reusable EDA function:
     run_eda(df, target_column, figures_path)
 
 The notebook imports and calls this single function.
-It prints a structured summary and saves required plots as EPS files.
+It prints a structured summary and saves ONE consolidated EDA figure
+named eda_summary.eps containing exactly 12 subplots on a single page.
 
-PLOTS GENERATED
----------------
-1. Class Distribution  — bar chart of target class counts
-2. Histograms          — one histogram per numerical feature
-3. Correlation Heatmap — Pearson correlation between numerical features
+SUBPLOTS (3 rows x 4 cols)
+---------------------------
+[0,0] Dataset Overview (text table)
+[0,1] Missing Value Bar Chart
+[0,2] Class Distribution Bar Chart
+[0,3] Pearson Correlation Heatmap
+[1,0] Histogram — numerical col 1
+[1,1] Histogram — numerical col 2
+[1,2] Histogram — numerical col 3
+[1,3] Histogram — numerical col 4
+[2,0] Boxplot   — numerical col 1
+[2,1] Boxplot   — numerical col 2
+[2,2] Boxplot   — numerical col 3
+[2,3] Scatter   — col 1 vs col 2 (coloured by class)
 """
 
 import os
@@ -41,32 +51,25 @@ def run_eda(df, target_column, figures_path="../figures/"):
     """
     Perform Exploratory Data Analysis on a tabular classification dataset.
 
+    Generates ONE Matplotlib figure with exactly 12 subplots arranged in a
+    3-row x 4-column grid and saves it as eda_summary.eps.
+
     This function is called ONCE in the notebook with the RAW dataset.
     It does NOT modify the data — that is preprocessing.py's job.
-
-    Steps performed
-    ---------------
-    1. Dataset overview   — shape, column types, non-null counts
-    2. Missing values     — count and percentage per column
-    3. Duplicate rows     — total count and percentage
-    4. Summary statistics — describe() for numerical and categorical columns
-    5. Class distribution — bar chart of target class counts  [SAVED]
-    6. Histograms         — distribution of each numerical feature [SAVED]
-    7. Correlation heatmap— Pearson correlation between numerical columns [SAVED]
 
     Parameters
     ----------
     df            : raw pd.DataFrame (straight from pd.read_csv)
     target_column : name of the label column (e.g. "Loan_Status")
-    figures_path  : directory where EPS plots are saved (created if missing)
+    figures_path  : directory where the EPS file is saved (created if missing)
 
     Returns
     -------
     dict with keys:
-        "shape"         : (rows, columns)
-        "missing"       : DataFrame of missing counts and percentages
-        "duplicates"    : number of duplicate rows
-        "class_counts"  : Series of target class value counts
+        "shape"        : (rows, columns)
+        "missing"      : DataFrame of missing counts and percentages
+        "duplicates"   : number of duplicate rows
+        "class_counts" : Series of target class value counts
     """
 
     os.makedirs(figures_path, exist_ok=True)
@@ -77,6 +80,7 @@ def run_eda(df, target_column, figures_path="../figures/"):
         "font.size"       : FONT_SIZE,
         "axes.labelweight": "bold",
         "axes.titleweight": "bold",
+        "legend.fontsize" : FONT_SIZE - 2,
     })
 
     # Separate numerical and categorical feature columns (excluding target)
@@ -94,11 +98,10 @@ def run_eda(df, target_column, figures_path="../figures/"):
     print(f"  Columns : {df.shape[1]}")
     print()
 
-    # Show each column's type and non-null count
     overview = pd.DataFrame({
-        "Column"       : df.columns,
-        "Dtype"        : df.dtypes.values,
-        "Non-Null"     : df.notnull().sum().values,
+        "Column"  : df.columns,
+        "Dtype"   : df.dtypes.values,
+        "Non-Null": df.notnull().sum().values,
     })
     print(overview.to_string(index=False))
     print()
@@ -156,7 +159,7 @@ def run_eda(df, target_column, figures_path="../figures/"):
         print()
 
     # -------------------------------------------------------------------------
-    # 5. CLASS DISTRIBUTION — bar chart
+    # 5. CLASS DISTRIBUTION — console summary
     # -------------------------------------------------------------------------
     print("=" * 60)
     print("5. CLASS DISTRIBUTION")
@@ -168,101 +171,172 @@ def run_eda(df, target_column, figures_path="../figures/"):
     for cls in class_counts.index:
         print(f"  {str(cls):<20}: {class_counts[cls]:>5} samples  ({class_pct[cls]:.1f}%)")
 
-    # Warn if any class has less than 30% of samples (class imbalance)
     if class_pct.min() < 30:
         print("\n  ⚠ Class imbalance detected (minority class < 30%).")
     print()
 
-    # Plot
-    fig, ax = plt.subplots(figsize=(8, 5))
+    # =========================================================================
+    # ONE FIGURE — 3 rows x 4 columns = 12 subplots
+    # =========================================================================
+    palette = sns.color_palette("Set2")
+
+    fig, axes = plt.subplots(3, 4, figsize=(28, 18))
+    fig.suptitle("EDA Summary", fontsize=FONT_SIZE + 4, fontweight="bold",
+                 fontfamily=FONT_FAMILY, y=1.01)
+
+    # -------------------------------------------------------------------------
+    # [0, 0] Dataset Overview — text table
+    # -------------------------------------------------------------------------
+    ax = axes[0, 0]
+    ax.axis("off")
+    ax.set_title("Dataset Overview", pad=10)
+    overview_data = [
+        ["Rows",             str(df.shape[0])],
+        ["Columns",          str(df.shape[1])],
+        ["Numerical cols",   str(len(numerical_cols))],
+        ["Categorical cols", str(len(categorical_cols))],
+        ["Target column",    target_column],
+        ["Duplicate rows",   str(dup_count)],
+        ["Total missing",    str(int(df.isnull().sum().sum()))],
+        ["Classes",          str(df[target_column].nunique())],
+    ]
+    tbl = ax.table(cellText=overview_data,
+                   colLabels=["Attribute", "Value"],
+                   loc="center", cellLoc="left")
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(FONT_SIZE - 3)
+    tbl.scale(1, 1.6)
+
+    # -------------------------------------------------------------------------
+    # [0, 1] Missing Value Bar Chart
+    # -------------------------------------------------------------------------
+    ax = axes[0, 1]
+    all_missing = df.isnull().sum()
+    all_missing = all_missing[all_missing > 0]
+    if all_missing.empty:
+        ax.text(0.5, 0.5, "No Missing Values",
+                ha="center", va="center", transform=ax.transAxes,
+                fontsize=FONT_SIZE - 1)
+    else:
+        ax.bar(all_missing.index, all_missing.values,
+               color=palette[1], edgecolor="white")
+        ax.tick_params(axis="x", rotation=45)
+    ax.set_title("Missing Value Analysis")
+    ax.set_xlabel("Feature")
+    ax.set_ylabel("Missing Count")
+
+    # -------------------------------------------------------------------------
+    # [0, 2] Class Distribution Bar Chart
+    # -------------------------------------------------------------------------
+    ax = axes[0, 2]
     colors = sns.color_palette("Set2", len(class_counts))
     bars   = ax.bar(class_counts.index.astype(str), class_counts.values,
                     color=colors, edgecolor="white")
-
-    # Annotate each bar with count and percentage
     for bar, count, pct in zip(bars, class_counts.values, class_pct.values):
         ax.text(bar.get_x() + bar.get_width() / 2,
                 bar.get_height() + class_counts.max() * 0.01,
                 f"{count}\n({pct:.1f}%)",
-                ha="center", va="bottom", fontsize=FONT_SIZE - 2)
-
+                ha="center", va="bottom", fontsize=FONT_SIZE - 4)
+    ax.set_title("Class Distribution")
     ax.set_xlabel(target_column)
     ax.set_ylabel("Count")
-    ax.set_title(f"Class Distribution — {target_column}")
-    ax.set_ylim(0, class_counts.max() * 1.25)
-    plt.tight_layout()
-
-    save_path = os.path.join(figures_path, f"class_distribution.{FIGURE_FMT}")
-    fig.savefig(save_path, format=FIGURE_FMT, dpi=FIGURE_DPI, bbox_inches="tight")
-    print(f"  [Saved] {save_path}")
-    plt.show()
-    plt.close(fig)
+    ax.set_ylim(0, class_counts.max() * 1.3)
 
     # -------------------------------------------------------------------------
-    # 6. HISTOGRAMS — one per numerical feature
+    # [0, 3] Pearson Correlation Heatmap
     # -------------------------------------------------------------------------
-    if numerical_cols:
-        print("=" * 60)
-        print("6. FEATURE DISTRIBUTIONS (Histograms)")
-        print("=" * 60)
-
-        n_cols = min(3, len(numerical_cols))
-        n_rows = (len(numerical_cols) + n_cols - 1) // n_cols  # ceiling division
-
-        fig, axes = plt.subplots(n_rows, n_cols,
-                                 figsize=(6 * n_cols, 4 * n_rows),
-                                 squeeze=False)
-        axes = axes.flatten()
-
-        for i, col in enumerate(numerical_cols):
-            sns.histplot(df[col].dropna(), kde=True, ax=axes[i],
-                         color="#4C72B0", edgecolor="white")
-            axes[i].set_xlabel(col)
-            axes[i].set_ylabel("Frequency")
-            axes[i].set_title(f"Distribution of {col}")
-
-        # Hide unused subplot slots
-        for j in range(len(numerical_cols), len(axes)):
-            axes[j].set_visible(False)
-
-        plt.suptitle("Feature Histograms with KDE", y=1.02)
-        plt.tight_layout()
-
-        save_path = os.path.join(figures_path, f"histograms.{FIGURE_FMT}")
-        fig.savefig(save_path, format=FIGURE_FMT, dpi=FIGURE_DPI, bbox_inches="tight")
-        print(f"  [Saved] {save_path}\n")
-        plt.show()
-        plt.close(fig)
-
-    # -------------------------------------------------------------------------
-    # 7. CORRELATION HEATMAP — Pearson correlation
-    # -------------------------------------------------------------------------
+    ax = axes[0, 3]
     if len(numerical_cols) >= 2:
-        print("=" * 60)
-        print("7. CORRELATION HEATMAP")
-        print("=" * 60)
-
         corr = df[numerical_cols].corr(method="pearson")
-
-        # Mask the upper triangle (it mirrors the lower triangle)
         mask = np.triu(np.ones_like(corr, dtype=bool))
-
-        n       = len(numerical_cols)
-        fig, ax = plt.subplots(figsize=(max(8, n), max(7, n - 1)))
-
         sns.heatmap(corr, mask=mask, annot=True, fmt=".2f",
                     cmap="coolwarm", center=0, vmin=-1, vmax=1,
-                    linewidths=0.5, ax=ax,
-                    annot_kws={"size": FONT_SIZE - 2})
+                    linewidths=0.4, ax=ax,
+                    annot_kws={"size": FONT_SIZE - 5},
+                    cbar_kws={"shrink": 0.8})
+        ax.set_title("Correlation Heatmap")
+        ax.tick_params(axis="x", rotation=45, labelsize=FONT_SIZE - 5)
+        ax.tick_params(axis="y", rotation=0,  labelsize=FONT_SIZE - 5)
+    else:
+        ax.axis("off")
+        ax.text(0.5, 0.5, "Need >= 2 numerical\ncolumns",
+                ha="center", va="center", transform=ax.transAxes)
+        ax.set_title("Correlation Heatmap")
 
-        ax.set_title("Pearson Correlation Heatmap")
-        plt.tight_layout()
+    # -------------------------------------------------------------------------
+    # [1, 0..3] Histograms — up to 4 numerical features
+    # -------------------------------------------------------------------------
+    hist_cols = numerical_cols[:4]
+    for i in range(4):
+        ax = axes[1, i]
+        if i < len(hist_cols):
+            col = hist_cols[i]
+            sns.histplot(df[col].dropna(), kde=True, ax=ax,
+                         color=palette[i % len(palette)], edgecolor="white")
+            ax.set_title(f"Distribution: {col}")
+            ax.set_xlabel(col)
+            ax.set_ylabel("Frequency")
+        else:
+            ax.axis("off")
 
-        save_path = os.path.join(figures_path, f"correlation_heatmap.{FIGURE_FMT}")
-        fig.savefig(save_path, format=FIGURE_FMT, dpi=FIGURE_DPI, bbox_inches="tight")
-        print(f"  [Saved] {save_path}\n")
-        plt.show()
-        plt.close(fig)
+    # -------------------------------------------------------------------------
+    # [2, 0..2] Boxplots — up to 3 numerical features
+    # -------------------------------------------------------------------------
+    box_cols = numerical_cols[:3]
+    for i in range(3):
+        ax = axes[2, i]
+        if i < len(box_cols):
+            col = box_cols[i]
+            ax.boxplot(df[col].dropna(), patch_artist=True,
+                       boxprops=dict(facecolor=palette[i % len(palette)],
+                                     color="black"),
+                       medianprops=dict(color="black", linewidth=2),
+                       whiskerprops=dict(color="black"),
+                       capprops=dict(color="black"),
+                       flierprops=dict(marker="o", markerfacecolor="grey",
+                                       markersize=4, linestyle="none"))
+            ax.set_title(f"Boxplot: {col}")
+            ax.set_xlabel(col)
+            ax.set_ylabel("Value")
+        else:
+            ax.axis("off")
+
+    # -------------------------------------------------------------------------
+    # [2, 3] Scatter plot — numerical col 0 vs col 1, coloured by class
+    # -------------------------------------------------------------------------
+    ax = axes[2, 3]
+    if len(numerical_cols) >= 2:
+        x_col, y_col    = numerical_cols[0], numerical_cols[1]
+        scatter_palette = sns.color_palette("Set1", df[target_column].nunique())
+        for idx, cls in enumerate(df[target_column].unique()):
+            mask_cls = df[target_column] == cls
+            ax.scatter(df.loc[mask_cls, x_col], df.loc[mask_cls, y_col],
+                       label=str(cls), alpha=0.6,
+                       color=scatter_palette[idx % len(scatter_palette)],
+                       s=30, edgecolors="none")
+        ax.set_title(f"Scatter: {x_col} vs {y_col}")
+        ax.set_xlabel(x_col)
+        ax.set_ylabel(y_col)
+        legend = ax.legend(title=target_column, framealpha=0.7,
+                           prop={"family": FONT_FAMILY, "size": FONT_SIZE - 2})
+        legend.get_title().set_fontfamily(FONT_FAMILY)
+    else:
+        ax.axis("off")
+        ax.text(0.5, 0.5, "Need >= 2 numerical\ncolumns for scatter",
+                ha="center", va="center", transform=ax.transAxes)
+        ax.set_title("Scatter Plot")
+
+    # =========================================================================
+    # Save ONE file: eda_summary.eps
+    # =========================================================================
+    plt.tight_layout()
+
+    save_path = os.path.join(figures_path, "eda_summary.eps")
+    fig.savefig(save_path, format=FIGURE_FMT, dpi=FIGURE_DPI, bbox_inches="tight")
+    print(f"  [Saved] {save_path}")
+
+    plt.show()
+    plt.close(fig)
 
     # -------------------------------------------------------------------------
     # RETURN structured summary for use in observations
