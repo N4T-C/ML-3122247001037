@@ -140,9 +140,10 @@ def tune_knn_grid(X_train, y_train):
     Tune KNN using GridSearchCV (exhaustive search).
 
     Searches over:
-        n_neighbors : [3, 5, 7, 9, 11]
+        algorithm   : ['kd_tree']
+        metric      : ['euclidean']
         weights     : ['uniform', 'distance']
-        metric      : ['euclidean', 'manhattan', 'minkowski']
+        n_neighbors : [1, 3, 5, 7, 9, 11]
 
     Parameters
     ----------
@@ -157,9 +158,10 @@ def tune_knn_grid(X_train, y_train):
     """
 
     param_grid = {
-        "n_neighbors": [3, 5, 7, 9, 11],
+        "algorithm"  : ["kd_tree"],
+        "metric"     : ["euclidean"],
         "weights"    : ["uniform", "distance"],
-        "metric"     : ["euclidean", "manhattan", "minkowski"],
+        "n_neighbors": [1, 3, 5, 7, 9, 11],
     }
 
     knn = KNeighborsClassifier()
@@ -172,7 +174,7 @@ def tune_knn_grid(X_train, y_train):
 
     import pandas as pd
     cv_results = pd.DataFrame(grid_search.cv_results_)[
-        ["param_n_neighbors", "param_weights", "param_metric",
+        ["param_n_neighbors", "param_weights", "param_algorithm", "param_metric",
          "mean_test_score", "std_test_score", "rank_test_score"]
     ].sort_values("rank_test_score")
 
@@ -193,9 +195,10 @@ def tune_knn_random(X_train, y_train, n_iter=20, random_state=42):
     Tune KNN using RandomizedSearchCV (random sampling of parameter space).
 
     Samples from:
-        n_neighbors : range(1, 21)
+        algorithm   : ['kd_tree']
+        metric      : ['euclidean']
         weights     : ['uniform', 'distance']
-        metric      : ['euclidean', 'manhattan', 'minkowski', 'chebyshev']
+        n_neighbors : [1, 3, 5, 7, 9, 11]
 
     Parameters
     ----------
@@ -212,9 +215,10 @@ def tune_knn_random(X_train, y_train, n_iter=20, random_state=42):
     """
 
     param_dist = {
-        "n_neighbors": list(range(1, 21)),
+        "algorithm"  : ["kd_tree"],
+        "metric"     : ["euclidean"],
         "weights"    : ["uniform", "distance"],
-        "metric"     : ["euclidean", "manhattan", "minkowski", "chebyshev"],
+        "n_neighbors": [1, 3, 5, 7, 9, 11],
     }
 
     knn = KNeighborsClassifier()
@@ -228,7 +232,7 @@ def tune_knn_random(X_train, y_train, n_iter=20, random_state=42):
 
     import pandas as pd
     cv_results = pd.DataFrame(random_search.cv_results_)[
-        ["param_n_neighbors", "param_weights", "param_metric",
+        ["param_n_neighbors", "param_weights", "param_algorithm", "param_metric",
          "mean_test_score", "std_test_score", "rank_test_score"]
     ].sort_values("rank_test_score")
 
