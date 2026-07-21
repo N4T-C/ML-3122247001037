@@ -1,0 +1,3 @@
+Algorithm,Accuracy,Train Time (s),Predict Time (s)
+KDTree,0.8919,0.028987,0.169551
+BallTree,0.8919,0.014703,0.154958

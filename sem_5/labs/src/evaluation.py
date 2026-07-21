@@ -6,11 +6,13 @@ Course  : ICS1512 — Machine Learning Laboratory, Semester 5
 
 PURPOSE
 -------
-Provides two reusable functions:
-    classification_metrics() — evaluates a classifier's predictions
-    regression_metrics()     — evaluates a regressor's predictions
+Provides four reusable functions:
+    classification_metrics()       — evaluates a classifier's predictions
+    regression_metrics()           — evaluates a regressor's predictions
+    cross_validate_model()         — 5-fold cross validation
+    compare_classification_models()— comparison table across multiple models
 
-The notebook imports and calls exactly ONE of these functions per experiment.
+The notebook imports and calls these functions as needed per experiment.
 """
 
 import os
@@ -47,7 +49,8 @@ FIGURE_FMT  = "eps"
 # =============================================================================
 
 def classification_metrics(y_test, y_pred, y_prob=None,
-                            class_names=None, figures_path="../figures/"):
+                            class_names=None, figures_path="../figures/",
+                            filename="confusion_matrix"):
     """
     Compute and display all evaluation metrics for a classification model.
 
@@ -67,7 +70,10 @@ def classification_metrics(y_test, y_pred, y_prob=None,
     y_pred      : predicted labels (from classification_model)
     y_prob      : predicted probabilities (from classification_model), or None
     class_names : list of human-readable class names, e.g. ["No", "Yes"]
-    figures_path: directory to save confusion_matrix.eps (None = don't save)
+    figures_path: directory to save the confusion matrix (None = don't save)
+    filename    : base filename for the confusion matrix image, without extension
+                  e.g. "confusion_matrix_gaussian_nb" → saves confusion_matrix_gaussian_nb.eps
+                  default: "confusion_matrix"
 
     Returns
     -------
@@ -139,7 +145,7 @@ def classification_metrics(y_test, y_pred, y_prob=None,
 
     if figures_path:
         os.makedirs(figures_path, exist_ok=True)
-        path = os.path.join(figures_path, f"confusion_matrix.{FIGURE_FMT}")
+        path = os.path.join(figures_path, f"{filename}.{FIGURE_FMT}")
         fig.savefig(path, format=FIGURE_FMT, dpi=FIGURE_DPI, bbox_inches="tight")
         print(f"  Saved: {path}")
 
@@ -230,3 +236,117 @@ def regression_metrics(y_test, y_pred, figures_path="../figures/"):
     plt.close(fig)
 
     return metrics_df
+
+
+# =============================================================================
+# CROSS VALIDATION
+# =============================================================================
+
+def cross_validate_model(model, X, y, cv=5):
+    """
+    Perform k-Fold Cross Validation on a trained (or untrained) sklearn model.
+
+    The model is cloned internally — your original fitted model is untouched.
+
+    Metrics computed per fold
+    -------------------------
+    Accuracy, Precision (weighted), Recall (weighted), F1 (weighted)
+
+    Parameters
+    ----------
+    model : any sklearn classifier (e.g. GaussianNB(), KNeighborsClassifier())
+    X     : full feature matrix (before splitting — CV does its own splits)
+    y     : full label array
+    cv    : number of folds (default: 5)
+
+    Returns
+    -------
+    scores_df  : pd.DataFrame — per-fold scores for each metric
+    summary_df : pd.DataFrame — mean and std for each metric across folds
+    """
+
+    from sklearn.model_selection import StratifiedKFold, cross_val_score
+
+    skf     = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
+    metrics = ["accuracy", "precision_weighted", "recall_weighted", "f1_weighted"]
+    labels  = ["Accuracy", "Precision", "Recall", "F1 Score"]
+
+    fold_scores = {}
+    for metric, label in zip(metrics, labels):
+        scores = cross_val_score(model, X, y, cv=skf,
+                                 scoring=metric, n_jobs=-1)
+        fold_scores[label] = scores
+
+    scores_df = pd.DataFrame(fold_scores,
+                             index=[f"Fold {i+1}" for i in range(cv)])
+
+    summary_df = pd.DataFrame({
+        "Metric": labels,
+        "Mean"  : [round(scores_df[l].mean(), 4) for l in labels],
+        "Std"   : [round(scores_df[l].std(), 4)  for l in labels],
+    })
+
+    print(f"\n{'='*50}")
+    print(f"  {cv}-Fold Cross Validation — {type(model).__name__}")
+    print(f"{'='*50}")
+    print(scores_df.round(4).to_string())
+    print(f"\n  Summary:")
+    print(summary_df.to_string(index=False))
+    print(f"{'='*50}\n")
+
+    return scores_df, summary_df
+
+
+# =============================================================================
+# MODEL COMPARISON TABLE
+# =============================================================================
+
+def compare_classification_models(results, output_path="../output/"):
+    """
+    Build and save a comparison table for multiple classification models.
+
+    Parameters
+    ----------
+    results     : list of dicts, one dict per model.
+                  Each dict must have keys:
+                      "Model"          : str  — model name
+                      "Accuracy"       : float
+                      "Precision"      : float
+                      "Recall"         : float
+                      "F1 Score"       : float
+                      "ROC-AUC"        : float or "-"
+                      "Train Time (s)" : float
+                      "Predict Time (s)": float
+    output_path : directory to save model_comparison.csv
+
+    Returns
+    -------
+    comparison_df : pd.DataFrame — the full comparison table
+
+    Example
+    -------
+    results = [
+        {"Model": "GaussianNB",  "Accuracy": 0.82, ..., "Train Time (s)": 0.01},
+        {"Model": "KNN",         "Accuracy": 0.91, ..., "Train Time (s)": 0.03},
+    ]
+    df = compare_classification_models(results, output_path="../output/")
+    """
+
+    comparison_df = pd.DataFrame(results, columns=[
+        "Model", "Accuracy", "Precision", "Recall",
+        "F1 Score", "ROC-AUC", "Train Time (s)", "Predict Time (s)",
+    ])
+
+    print(f"\n{'='*70}")
+    print("  MODEL COMPARISON TABLE")
+    print(f"{'='*70}")
+    print(comparison_df.to_string(index=False))
+    print(f"{'='*70}\n")
+
+    if output_path:
+        os.makedirs(output_path, exist_ok=True)
+        path = os.path.join(output_path, "model_comparison.csv")
+        comparison_df.to_csv(path, index=False)
+        print(f"  Saved: {path}")
+
+    return comparison_df

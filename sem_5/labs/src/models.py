@@ -10,6 +10,10 @@ Provides two reusable functions:
     classification_model() — trains any classification algorithm
     regression_model()     — trains any regression algorithm
 
+Also provides two KNN tuning functions:
+    tune_knn_grid()   — GridSearchCV
+    tune_knn_random() — RandomizedSearchCV
+
 The notebook imports and calls exactly ONE of these functions per experiment.
 """
 
@@ -18,7 +22,8 @@ import warnings
 
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -30,7 +35,8 @@ warnings.filterwarnings("ignore")
 # CLASSIFICATION MODEL
 # =============================================================================
 
-def classification_model(X_train, y_train, X_test, model_name="knn"):
+def classification_model(X_train, y_train, X_test, model_name="knn",
+                          algorithm="auto"):
     """
     Train a classification model and return predictions.
 
@@ -39,6 +45,8 @@ def classification_model(X_train, y_train, X_test, model_name="knn"):
     "knn"                 → K-Nearest Neighbours
     "decision_tree"       → Decision Tree
     "naive_bayes"         → Gaussian Naive Bayes
+    "multinomial_nb"      → Multinomial Naive Bayes
+    "bernoulli_nb"        → Bernoulli Naive Bayes
     "logistic_regression" → Logistic Regression
     "svm"                 → Support Vector Machine
     "random_forest"       → Random Forest
@@ -49,6 +57,9 @@ def classification_model(X_train, y_train, X_test, model_name="knn"):
     y_train    : training labels
     X_test     : test features
     model_name : algorithm to use (default: "knn")
+    algorithm  : only used when model_name="knn"
+                 "auto" | "kd_tree" | "ball_tree" | "brute"
+                 (default: "auto")
 
     Returns
     -------
@@ -61,13 +72,19 @@ def classification_model(X_train, y_train, X_test, model_name="knn"):
 
     # --- Pick the algorithm ---------------------------------------------------
     if model_name == "knn":
-        model = KNeighborsClassifier()
+        model = KNeighborsClassifier(algorithm=algorithm)
 
     elif model_name == "decision_tree":
         model = DecisionTreeClassifier(random_state=42)
 
     elif model_name == "naive_bayes":
         model = GaussianNB()
+
+    elif model_name == "multinomial_nb":
+        model = MultinomialNB()
+
+    elif model_name == "bernoulli_nb":
+        model = BernoulliNB()
 
     elif model_name == "logistic_regression":
         model = LogisticRegression(random_state=42, max_iter=1000)
@@ -82,8 +99,8 @@ def classification_model(X_train, y_train, X_test, model_name="knn"):
     else:
         raise ValueError(
             f"Unknown model_name: '{model_name}'. "
-            "Choose from: knn, decision_tree, naive_bayes, "
-            "logistic_regression, svm, random_forest"
+            "Choose from: knn, decision_tree, naive_bayes, multinomial_nb, "
+            "bernoulli_nb, logistic_regression, svm, random_forest"
         )
 
     # --- Train ---------------------------------------------------------------
@@ -112,6 +129,119 @@ def classification_model(X_train, y_train, X_test, model_name="knn"):
     print(f"{'='*50}\n")
 
     return model, y_pred, y_prob, training_time, prediction_time
+
+
+# =============================================================================
+# KNN HYPERPARAMETER TUNING
+# =============================================================================
+
+def tune_knn_grid(X_train, y_train):
+    """
+    Tune KNN using GridSearchCV (exhaustive search).
+
+    Searches over:
+        n_neighbors : [3, 5, 7, 9, 11]
+        weights     : ['uniform', 'distance']
+        metric      : ['euclidean', 'manhattan', 'minkowski']
+
+    Parameters
+    ----------
+    X_train : training features
+    y_train : training labels
+
+    Returns
+    -------
+    best_model  : fitted KNeighborsClassifier with best parameters
+    best_params : dict of best hyperparameters found
+    cv_results  : pd.DataFrame of all parameter combinations and their scores
+    """
+
+    param_grid = {
+        "n_neighbors": [3, 5, 7, 9, 11],
+        "weights"    : ["uniform", "distance"],
+        "metric"     : ["euclidean", "manhattan", "minkowski"],
+    }
+
+    knn = KNeighborsClassifier()
+    grid_search = GridSearchCV(knn, param_grid, cv=5,
+                               scoring="accuracy", n_jobs=-1)
+
+    t0 = time.perf_counter()
+    grid_search.fit(X_train, y_train)
+    elapsed = time.perf_counter() - t0
+
+    import pandas as pd
+    cv_results = pd.DataFrame(grid_search.cv_results_)[
+        ["param_n_neighbors", "param_weights", "param_metric",
+         "mean_test_score", "std_test_score", "rank_test_score"]
+    ].sort_values("rank_test_score")
+
+    print(f"\n{'='*50}")
+    print("  GridSearchCV — KNN Tuning")
+    print(f"{'='*50}")
+    print(f"  Total combinations : {len(cv_results)}")
+    print(f"  Search time        : {elapsed:.4f} s")
+    print(f"  Best parameters    : {grid_search.best_params_}")
+    print(f"  Best CV accuracy   : {grid_search.best_score_:.4f}")
+    print(f"{'='*50}\n")
+
+    return grid_search.best_estimator_, grid_search.best_params_, cv_results
+
+
+def tune_knn_random(X_train, y_train, n_iter=20, random_state=42):
+    """
+    Tune KNN using RandomizedSearchCV (random sampling of parameter space).
+
+    Samples from:
+        n_neighbors : range(1, 21)
+        weights     : ['uniform', 'distance']
+        metric      : ['euclidean', 'manhattan', 'minkowski', 'chebyshev']
+
+    Parameters
+    ----------
+    X_train      : training features
+    y_train      : training labels
+    n_iter       : number of random parameter combinations to try (default: 20)
+    random_state : random seed for reproducibility (default: 42)
+
+    Returns
+    -------
+    best_model  : fitted KNeighborsClassifier with best parameters
+    best_params : dict of best hyperparameters found
+    cv_results  : pd.DataFrame of sampled combinations and their scores
+    """
+
+    param_dist = {
+        "n_neighbors": list(range(1, 21)),
+        "weights"    : ["uniform", "distance"],
+        "metric"     : ["euclidean", "manhattan", "minkowski", "chebyshev"],
+    }
+
+    knn = KNeighborsClassifier()
+    random_search = RandomizedSearchCV(knn, param_dist, n_iter=n_iter, cv=5,
+                                       scoring="accuracy", n_jobs=-1,
+                                       random_state=random_state)
+
+    t0 = time.perf_counter()
+    random_search.fit(X_train, y_train)
+    elapsed = time.perf_counter() - t0
+
+    import pandas as pd
+    cv_results = pd.DataFrame(random_search.cv_results_)[
+        ["param_n_neighbors", "param_weights", "param_metric",
+         "mean_test_score", "std_test_score", "rank_test_score"]
+    ].sort_values("rank_test_score")
+
+    print(f"\n{'='*50}")
+    print("  RandomizedSearchCV — KNN Tuning")
+    print(f"{'='*50}")
+    print(f"  Combinations tried : {n_iter}")
+    print(f"  Search time        : {elapsed:.4f} s")
+    print(f"  Best parameters    : {random_search.best_params_}")
+    print(f"  Best CV accuracy   : {random_search.best_score_:.4f}")
+    print(f"{'='*50}\n")
+
+    return random_search.best_estimator_, random_search.best_params_, cv_results
 
 
 # =============================================================================
