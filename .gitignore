@@ -5,3 +5,4 @@ datasets/handwritten/mnist_train.csv
 datasets/handwritten/mnist_test.csv
 datasets/mnist/mnist_train.csv
 datasets/mnist/mnist_test.csv
+datasets/EnglishHnd.tgz
