@@ -1,0 +1,176 @@
+
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{longtable}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{ICS1512}
+\rhead{Machine Learning Algorithms Laboratory}
+\cfoot{\thepage}
+
+\lstset{
+language=Python,
+basicstyle=\ttfamily\small,
+numbers=left,
+frame=single,
+breaklines=true,
+showstringspaces=false
+}
+
+\begin{document}
+
+\begin{tabular}{|p{4cm}|p{11cm}|}
+\hline
+Experiment No. & \\ \hline
+Experiment Title &
+\footnote{\textbf{GitHub Repository: }\url{https://github.com/username/repository}}\\ \hline
+Student Name & \\ \hline
+Register Number & \\ \hline
+Faculty & Dr. Poreddy Ajay Kumar Reddy \\ \hline
+Submission Date & \\ \hline
+\end{tabular}
+
+\section{Objective}
+State the objective of the experiment.
+
+\section{Problem Statement}
+Describe the problem, input, output, and objective.
+
+\section{Dataset Description}
+\begin{longtable}{|p{6cm}|p{8cm}|}
+\hline
+Dataset Name & \\ \hline
+Dataset Source & \\ \hline
+Number of Samples & \\ \hline
+Number of Features & \\ \hline
+Number of Classes & \\ \hline
+Missing Values & \\ \hline
+Train-Test Split & \\ \hline
+\end{longtable}
+
+\section{Exploratory Data Analysis}
+Include all relevant visualizations.
+\begin{itemize}
+\item Dataset overview
+\item Statistical summary
+\item Missing value analysis
+\item Class distribution
+\item Correlation matrix
+\item Feature distribution
+\end{itemize}
+
+\subsection*{Figure Template}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{example-image}
+\caption{Replace with your figure caption}
+\end{figure}
+
+\textbf{Inference:}
+
+Write 3--5 sentences explaining what the graph indicates and how it helps in understanding the dataset.
+
+\section{Data Preprocessing}
+
+Explain:
+\begin{itemize}
+\item Missing value handling
+\item Encoding
+\item Feature scaling
+\item Train-test split
+\item Feature engineering (if applicable)
+\end{itemize}
+
+\section{Machine Learning Algorithm}
+Explain:
+\begin{itemize}
+\item Working principle
+\item Mathematical formulation
+\item Advantages
+\item Limitations
+\end{itemize}
+
+\section{Experimental Setup}
+\begin{tabular}{ll}
+\toprule
+Python Version & \\
+Scikit-Learn Version & \\
+IDE & \\
+Operating System & \\
+Hardware & \\
+\bottomrule
+\end{tabular}
+
+\section{Hyperparameter Selection}
+
+\begin{tabular}{ll}
+\toprule
+Parameter & Value\\
+\midrule
+ & \\
+ & \\
+\bottomrule
+\end{tabular}
+
+
+
+\section{Results}
+
+\begin{tabular}{lc}
+\toprule
+Metric & Value\\
+\midrule
+Accuracy & \\
+Precision & \\
+Recall & \\
+F1-score & \\
+ROC-AUC & \\
+\bottomrule
+\end{tabular}
+
+\section{Result Visualization}
+
+Include all graphs generated during the experiment.
+
+For \textbf{every graph}, provide:
+\begin{itemize}
+\item Figure
+\item Caption
+\item 3--5 line inference
+\end{itemize}
+
+Recommended figures:
+\begin{enumerate}
+\item Correlation Matrix
+\item Class Distribution
+\item Confusion Matrix
+\item ROC Curve
+\item Precision-Recall Curve
+\item Learning Curve (if applicable)
+\item Feature Importance (if applicable)
+\end{enumerate}
+
+\section{Discussion}
+Discuss observations, strengths, limitations and improvements.
+
+\section{Conclusion}
+Summarize the experiment and key findings.
+
+\section{References}
+Use IEEE style.
+
+\end{document}
