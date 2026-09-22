@@ -4,8 +4,8 @@ This repository contains the laboratory assignments completed for the **ICS1512 
 
 ## Student Information
 
-- **Name:** Sharruk S
-- **Register Number:** 3122247001061
+- **Name:** NATHANIEL CHRISTIAN
+- **Register Number:** 3122247001037
 - **Degree:** M.Tech (Integrated) Computer Science & Engineering
 - **Semester:** V
 - **Academic Year:** 2026–2027 (Odd)
@@ -20,25 +20,25 @@ This repository contains the laboratory assignments completed for the **ICS1512 
 ├── assign1
 │   ├── ex1.ipynb
 │   ├── ex1.html
-│   ├── Sharruk_S_3122247001061_Assignment1.pdf
+│   ├── natml1.pdf
 │   └── question/
 │
 ├── assign2
 │   ├── ex2.ipynb
 │   ├── ex2.html
-│   ├── ICS1512_Exp2_SpamHam_Sharruk_S_3122247001061.pdf
+│   ├── natml2.pdf
 │   └── question/
 │
 ├── assign3
 │   ├── ex3.ipynb
 │   ├── ex3.html
-│   ├── Experiment_3_Report_Sharruk_S_3122247001061.pdf
+│   ├── natml3.pdf
 │   └── question/
 │
 ├── assign4
 │   ├── ex4.ipynb
 │   ├── ex4.html
-│   ├── Experiment_4_Report_Sharruk_S_3122247001061.pdf
+│   ├── natml4.pdf
 │   └── question/
 │
 ├── datasets
@@ -104,8 +104,8 @@ This repository contains the laboratory assignments completed for the **ICS1512 
 
 ## Author
 
-**Sharruk S**
+**Nathaniel Christian**
 
-Register Number: **3122247001061**
+Register Number: **3122247001037**
 
 Sri Sivasubramaniya Nadar College of Engineering, Chennai

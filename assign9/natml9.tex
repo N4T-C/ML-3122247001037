@@ -1,0 +1,2323 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+
+\definecolor{codegray}{gray}{0.95}
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily\small,
+    frame=single,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\title{\textbf{Experiment 9}\\Perceptron vs MLP}
+\author{Nathaniel Christian\\Machine Learning\\Reg. No: 3122247001037}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Aim}
+To implement and compare the performance of:
+\begin{itemize}
+    \item Model A: Single Layer Perceptron Learning Algorithm (PLA).
+    \item Model B: Multilayer Perceptron (MLP) with hidden layers and nonlinear activations.
+\end{itemize}
+
+\section{Preprocessing Steps}
+The following preprocessing steps were performed on the handwritten character images:
+\begin{itemize}
+    \item Load the handwritten character images.
+    \item Resize the images to a fixed size.
+    \item Convert the images to grayscale.
+    \item Flatten the images into feature vectors.
+    \item Normalize the pixel values.
+    \item Split the dataset into training and testing sets.
+    \item Perform 5-fold cross-validation where required.
+    \item Evaluate the performance of the trained models.
+\end{itemize}
+
+\section{Code and Results}
+
+\begin{lstlisting}
+                                            Machine Learning
+Name: Jayasri M                               Experiment 9
+Reg. No: 3122247001025                     Perceptron vs MLP                               Page 1
+
+
+1     Aim
+To implement and compare the performance of:
+
+    • Model A: Single Layer Perceptron Learning Algorithm (PLA).
+
+    • Model B: Multilayer Perceptron (MLP) with hidden layers and nonlinear activations.
+
+
+2     Preprocessing Steps
+The following preprocessing steps were performed on the handwritten character images:
+
+    • Load the handwritten character images.
+    • Resize the images to a fixed size.
+
+    • Convert the images to grayscale.
+    • Flatten the images into feature vectors.
+    • Normalize the pixel values.
+
+    • Split the dataset into training and testing sets.
+    • Perform 5-fold cross-validation where required.
+    • Evaluate the performance of the trained models.
+
+
+3     Code
+
+
+
+
+
+          In [76]: import os
+                   import numpy as np
+                   import pandas as pd
+                   import matplotlib.pyplot as plt
+                   from PIL import Image
+                   from sklearn.model_selection import train_test_split
+                   from sklearn.preprocessing import LabelEncoder
+                   from sklearn.metrics import accuracy_score, precision_score,recall_score,f1_score,c
+                   from sklearn.neural_network import MLPClassifier
+                   from sklearn.preprocessing import label_binarize
+
+
+          In [24]: dataset_path = "C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/Datasets/Img"
+
+                       files = os.listdir(dataset_path)
+
+                       print("Total files:", len(files))
+
+                       print("\nFirst 20 files:")
+
+                       for file in files[:20]:
+                           print(file)
+
+                     Total files: 1212
+
+                     First 20 files:
+                     img001-001.png
+                     img001-002.png
+                     img001-003.png
+                     img001-004.png
+                     img001-005.png
+                     img001-006.png
+                     img001-007.png
+                     img001-008.png
+                     img001-009.png
+                     img001-010.png
+                     img001-011.png
+                     img001-012.png
+                     img001-013.png
+                     img001-014.png
+                     img001-015.png
+                     img001-016.png
+                     img001-017.png
+                     img001-018.png
+                     img001-019.png
+                     img001-020.png
+
+          In [25]: images = []
+                   labels = []
+
+                       for file_name in files:
+
+                            file_path = os.path.join(dataset_path, file_name)
+
+                            if not file_name.lower().endswith((".png", ".jpg", ".jpeg")):
+
+
+
+
+                                  continue
+
+                            try:
+
+                                  image = Image.open(file_path)
+
+                                  image = image.convert("L")
+
+                                  image = image.resize((28, 28))
+
+                                  image_array = np.array(image)
+
+                                  images.append(image_array)
+
+                                  label = file_name.split("-")[0]
+
+                                  labels.append(label)
+
+                            except:
+                                print("Could not read:", file_name)
+
+                       X = np.array(images)
+                       y = np.array(labels)
+
+                       print("Number of images:", len(X))
+                       print("Image shape:", X.shape)
+                       print("Number of labels:", len(y))
+
+                     Number of images: 1212
+                     Image shape: (1212, 28, 28)
+                     Number of labels: 1212
+
+          In [20]: label_counts = Counter(y)
+
+                       print("Number of classes:", len(label_counts))
+                       print("Number of images:", len(y))
+
+                       print("\nClasses with fewer than 2 images:")
+
+                       for label, count in label_counts.items():
+                           if count < 2:
+                               print(label, ":", count)
+
+
+
+
+
+
+                     Number of classes: 1212
+                     Number of images: 1212
+
+                     Classes with fewer than 2 images:
+                     img001-001.png : 1
+                     img001-002.png : 1
+                     img001-003.png : 1
+                     img001-004.png : 1
+                     img001-005.png : 1
+                     img001-006.png : 1
+                     img001-007.png : 1
+                     img001-008.png : 1
+                     img001-009.png : 1
+                     img001-010.png : 1
+                     img001-011.png : 1
+                     img001-012.png : 1
+                     img001-013.png : 1
+                     img001-014.png : 1
+                     img001-015.png : 1
+                     img001-016.png : 1
+                     img001-017.png : 1
+                     img001-018.png : 1
+                     img001-019.png : 1
+                     img001-020.png : 1
+                     img001-021.png : 1
+                     img001-022.png : 1
+                     img001-023.png : 1
+                     img001-024.png : 1
+                     img001-025.png : 1
+                     img001-026.png : 1
+                     img001-027.png : 1
+                     img001-028.png : 1
+                     img001-029.png : 1
+                     img001-030.png : 1
+                     img001-031.png : 1
+                     img001-032.png : 1
+                     img001-033.png : 1
+                     img001-034.png : 1
+                     img001-035.png : 1
+                     img001-036.png : 1
+                     img001-037.png : 1
+                     img001-038.png : 1
+                     img001-039.png : 1
+                     img001-040.png : 1
+                     img001-041.png : 1
+                     img001-042.png : 1
+                     img001-043.png : 1
+                     img001-044.png : 1
+                     img001-045.png : 1
+                     img001-046.png : 1
+                     img001-047.png : 1
+                     img001-048.png : 1
+                     img001-049.png : 1
+                     img001-050.png : 1
+                     img001-051.png : 1
+                     img001-052.png : 1
+
+
+
+                     img001-053.png : 1
+                     img001-054.png : 1
+                     img001-055.png : 1
+                     img002-001.png : 1
+                     img002-002.png : 1
+                     img002-003.png : 1
+                     img002-004.png : 1
+                     img002-005.png : 1
+                     img002-006.png : 1
+                     img002-007.png : 1
+                     img002-008.png : 1
+                     img002-009.png : 1
+                     img002-010.png : 1
+                     img002-011.png : 1
+                     img002-012.png : 1
+                     img002-013.png : 1
+                     img002-014.png : 1
+                     img002-015.png : 1
+                     img002-016.png : 1
+                     img002-017.png : 1
+                     img002-018.png : 1
+                     img002-019.png : 1
+                     img002-020.png : 1
+                     img002-021.png : 1
+                     img002-022.png : 1
+                     img002-023.png : 1
+                     img002-024.png : 1
+                     img002-025.png : 1
+                     img002-026.png : 1
+                     img002-027.png : 1
+                     img002-028.png : 1
+                     img002-029.png : 1
+                     img002-030.png : 1
+                     img002-031.png : 1
+                     img002-032.png : 1
+                     img002-033.png : 1
+                     img002-034.png : 1
+                     img002-035.png : 1
+                     img002-036.png : 1
+                     img002-037.png : 1
+                     img002-038.png : 1
+                     img002-039.png : 1
+                     img002-040.png : 1
+                     img002-041.png : 1
+                     img002-042.png : 1
+                     img002-043.png : 1
+                     img002-044.png : 1
+                     img002-045.png : 1
+                     img002-046.png : 1
+                     img002-047.png : 1
+                     img002-048.png : 1
+                     img002-049.png : 1
+                     img002-050.png : 1
+                     img002-051.png : 1
+                     img002-052.png : 1
+                     img002-053.png : 1
+
+
+
+                     img002-054.png : 1
+                     img002-055.png : 1
+                     img003-001.png : 1
+                     img003-002.png : 1
+                     img003-003.png : 1
+                     img003-004.png : 1
+                     img003-005.png : 1
+                     img003-006.png : 1
+                     img003-007.png : 1
+                     img003-008.png : 1
+                     img003-009.png : 1
+                     img003-010.png : 1
+                     img003-011.png : 1
+                     img003-012.png : 1
+                     img003-013.png : 1
+                     img003-014.png : 1
+                     img003-015.png : 1
+                     img003-016.png : 1
+                     img003-017.png : 1
+                     img003-018.png : 1
+                     img003-019.png : 1
+                     img003-020.png : 1
+                     img003-021.png : 1
+                     img003-022.png : 1
+                     img003-023.png : 1
+                     img003-024.png : 1
+                     img003-025.png : 1
+                     img003-026.png : 1
+                     img003-027.png : 1
+                     img003-028.png : 1
+                     img003-029.png : 1
+                     img003-030.png : 1
+                     img003-031.png : 1
+                     img003-032.png : 1
+                     img003-033.png : 1
+                     img003-034.png : 1
+                     img003-035.png : 1
+                     img003-036.png : 1
+                     img003-037.png : 1
+                     img003-038.png : 1
+                     img003-039.png : 1
+                     img003-040.png : 1
+                     img003-041.png : 1
+                     img003-042.png : 1
+                     img003-043.png : 1
+                     img003-044.png : 1
+                     img003-045.png : 1
+                     img003-046.png : 1
+                     img003-047.png : 1
+                     img003-048.png : 1
+                     img003-049.png : 1
+                     img003-050.png : 1
+                     img003-051.png : 1
+                     img003-052.png : 1
+                     img003-053.png : 1
+                     img003-054.png : 1
+
+
+
+                     img003-055.png : 1
+                     img004-001.png : 1
+                     img004-002.png : 1
+                     img004-003.png : 1
+                     img004-004.png : 1
+                     img004-005.png : 1
+                     img004-006.png : 1
+                     img004-007.png : 1
+                     img004-008.png : 1
+                     img004-009.png : 1
+                     img004-010.png : 1
+                     img004-011.png : 1
+                     img004-012.png : 1
+                     img004-013.png : 1
+                     img004-014.png : 1
+                     img004-015.png : 1
+                     img004-016.png : 1
+                     img004-017.png : 1
+                     img004-018.png : 1
+                     img004-019.png : 1
+                     img004-020.png : 1
+                     img004-021.png : 1
+                     img004-022.png : 1
+                     img004-023.png : 1
+                     img004-024.png : 1
+                     img004-025.png : 1
+                     img004-026.png : 1
+                     img004-027.png : 1
+                     img004-028.png : 1
+                     img004-029.png : 1
+                     img004-030.png : 1
+                     img004-031.png : 1
+                     img004-032.png : 1
+                     img004-033.png : 1
+                     img004-034.png : 1
+                     img004-035.png : 1
+                     img004-036.png : 1
+                     img004-037.png : 1
+                     img004-038.png : 1
+                     img004-039.png : 1
+                     img004-040.png : 1
+                     img004-041.png : 1
+                     img004-042.png : 1
+                     img004-043.png : 1
+                     img004-044.png : 1
+                     img004-045.png : 1
+                     img004-046.png : 1
+                     img004-047.png : 1
+                     img004-048.png : 1
+                     img004-049.png : 1
+                     img004-050.png : 1
+                     img004-051.png : 1
+                     img004-052.png : 1
+                     img004-053.png : 1
+                     img004-054.png : 1
+                     img004-055.png : 1
+
+
+
+                     img005-001.png : 1
+                     img005-002.png : 1
+                     img005-003.png : 1
+                     img005-004.png : 1
+                     img005-005.png : 1
+                     img005-006.png : 1
+                     img005-007.png : 1
+                     img005-008.png : 1
+                     img005-009.png : 1
+                     img005-010.png : 1
+                     img005-011.png : 1
+                     img005-012.png : 1
+                     img005-013.png : 1
+                     img005-014.png : 1
+                     img005-015.png : 1
+                     img005-016.png : 1
+                     img005-017.png : 1
+                     img005-018.png : 1
+                     img005-019.png : 1
+                     img005-020.png : 1
+                     img005-021.png : 1
+                     img005-022.png : 1
+                     img005-023.png : 1
+                     img005-024.png : 1
+                     img005-025.png : 1
+                     img005-026.png : 1
+                     img005-027.png : 1
+                     img005-028.png : 1
+                     img005-029.png : 1
+                     img005-030.png : 1
+                     img005-031.png : 1
+                     img005-032.png : 1
+                     img005-033.png : 1
+                     img005-034.png : 1
+                     img005-035.png : 1
+                     img005-036.png : 1
+                     img005-037.png : 1
+                     img005-038.png : 1
+                     img005-039.png : 1
+                     img005-040.png : 1
+                     img005-041.png : 1
+                     img005-042.png : 1
+                     img005-043.png : 1
+                     img005-044.png : 1
+                     img005-045.png : 1
+                     img005-046.png : 1
+                     img005-047.png : 1
+                     img005-048.png : 1
+                     img005-049.png : 1
+                     img005-050.png : 1
+                     img005-051.png : 1
+                     img005-052.png : 1
+                     img005-053.png : 1
+                     img005-054.png : 1
+                     img005-055.png : 1
+                     img006-001.png : 1
+
+
+
+                     img006-002.png : 1
+                     img006-003.png : 1
+                     img006-004.png : 1
+                     img006-005.png : 1
+                     img006-006.png : 1
+                     img006-007.png : 1
+                     img006-008.png : 1
+                     img006-009.png : 1
+                     img006-010.png : 1
+                     img006-011.png : 1
+                     img006-012.png : 1
+                     img006-013.png : 1
+                     img006-014.png : 1
+                     img006-015.png : 1
+                     img006-016.png : 1
+                     img006-017.png : 1
+                     img006-018.png : 1
+                     img006-019.png : 1
+                     img006-020.png : 1
+                     img006-021.png : 1
+                     img006-022.png : 1
+                     img006-023.png : 1
+                     img006-024.png : 1
+                     img006-025.png : 1
+                     img006-026.png : 1
+                     img006-027.png : 1
+                     img006-028.png : 1
+                     img006-029.png : 1
+                     img006-030.png : 1
+                     img006-031.png : 1
+                     img006-032.png : 1
+                     img006-033.png : 1
+                     img006-034.png : 1
+                     img006-035.png : 1
+                     img006-036.png : 1
+                     img006-037.png : 1
+                     img006-038.png : 1
+                     img006-039.png : 1
+                     img006-040.png : 1
+                     img006-041.png : 1
+                     img006-042.png : 1
+                     img006-043.png : 1
+                     img006-044.png : 1
+                     img006-045.png : 1
+                     img006-046.png : 1
+                     img006-047.png : 1
+                     img006-048.png : 1
+                     img006-049.png : 1
+                     img006-050.png : 1
+                     img006-051.png : 1
+                     img006-052.png : 1
+                     img006-053.png : 1
+                     img006-054.png : 1
+                     img006-055.png : 1
+                     img007-001.png : 1
+                     img007-002.png : 1
+
+
+
+                     img007-003.png : 1
+                     img007-004.png : 1
+                     img007-005.png : 1
+                     img007-006.png : 1
+                     img007-007.png : 1
+                     img007-008.png : 1
+                     img007-009.png : 1
+                     img007-010.png : 1
+                     img007-011.png : 1
+                     img007-012.png : 1
+                     img007-013.png : 1
+                     img007-014.png : 1
+                     img007-015.png : 1
+                     img007-016.png : 1
+                     img007-017.png : 1
+                     img007-018.png : 1
+                     img007-019.png : 1
+                     img007-020.png : 1
+                     img007-021.png : 1
+                     img007-022.png : 1
+                     img007-023.png : 1
+                     img007-024.png : 1
+                     img007-025.png : 1
+                     img007-026.png : 1
+                     img007-027.png : 1
+                     img007-028.png : 1
+                     img007-029.png : 1
+                     img007-030.png : 1
+                     img007-031.png : 1
+                     img007-032.png : 1
+                     img007-033.png : 1
+                     img007-034.png : 1
+                     img007-035.png : 1
+                     img007-036.png : 1
+                     img007-037.png : 1
+                     img007-038.png : 1
+                     img007-039.png : 1
+                     img007-040.png : 1
+                     img007-041.png : 1
+                     img007-042.png : 1
+                     img007-043.png : 1
+                     img007-044.png : 1
+                     img007-045.png : 1
+                     img007-046.png : 1
+                     img007-047.png : 1
+                     img007-048.png : 1
+                     img007-049.png : 1
+                     img007-050.png : 1
+                     img007-051.png : 1
+                     img007-052.png : 1
+                     img007-053.png : 1
+                     img007-054.png : 1
+                     img007-055.png : 1
+                     img008-001.png : 1
+                     img008-002.png : 1
+                     img008-003.png : 1
+
+
+
+                     img008-004.png : 1
+                     img008-005.png : 1
+                     img008-006.png : 1
+                     img008-007.png : 1
+                     img008-008.png : 1
+                     img008-009.png : 1
+                     img008-010.png : 1
+                     img008-011.png : 1
+                     img008-012.png : 1
+                     img008-013.png : 1
+                     img008-014.png : 1
+                     img008-015.png : 1
+                     img008-016.png : 1
+                     img008-017.png : 1
+                     img008-018.png : 1
+                     img008-019.png : 1
+                     img008-020.png : 1
+                     img008-021.png : 1
+                     img008-022.png : 1
+                     img008-023.png : 1
+                     img008-024.png : 1
+                     img008-025.png : 1
+                     img008-026.png : 1
+                     img008-027.png : 1
+                     img008-028.png : 1
+                     img008-029.png : 1
+                     img008-030.png : 1
+                     img008-031.png : 1
+                     img008-032.png : 1
+                     img008-033.png : 1
+                     img008-034.png : 1
+                     img008-035.png : 1
+                     img008-036.png : 1
+                     img008-037.png : 1
+                     img008-038.png : 1
+                     img008-039.png : 1
+                     img008-040.png : 1
+                     img008-041.png : 1
+                     img008-042.png : 1
+                     img008-043.png : 1
+                     img008-044.png : 1
+                     img008-045.png : 1
+                     img008-046.png : 1
+                     img008-047.png : 1
+                     img008-048.png : 1
+                     img008-049.png : 1
+                     img008-050.png : 1
+                     img008-051.png : 1
+                     img008-052.png : 1
+                     img008-053.png : 1
+                     img008-054.png : 1
+                     img008-055.png : 1
+                     img009-001.png : 1
+                     img009-002.png : 1
+                     img009-003.png : 1
+                     img009-004.png : 1
+
+
+
+                     img009-005.png : 1
+                     img009-006.png : 1
+                     img009-007.png : 1
+                     img009-008.png : 1
+                     img009-009.png : 1
+                     img009-010.png : 1
+                     img009-011.png : 1
+                     img009-012.png : 1
+                     img009-013.png : 1
+                     img009-014.png : 1
+                     img009-015.png : 1
+                     img009-016.png : 1
+                     img009-017.png : 1
+                     img009-018.png : 1
+                     img009-019.png : 1
+                     img009-020.png : 1
+                     img009-021.png : 1
+                     img009-022.png : 1
+                     img009-023.png : 1
+                     img009-024.png : 1
+                     img009-025.png : 1
+                     img009-026.png : 1
+                     img009-027.png : 1
+                     img009-028.png : 1
+                     img009-029.png : 1
+                     img009-030.png : 1
+                     img009-031.png : 1
+                     img009-032.png : 1
+                     img009-033.png : 1
+                     img009-034.png : 1
+                     img009-035.png : 1
+                     img009-036.png : 1
+                     img009-037.png : 1
+                     img009-038.png : 1
+                     img009-039.png : 1
+                     img009-040.png : 1
+                     img009-041.png : 1
+                     img009-042.png : 1
+                     img009-043.png : 1
+                     img009-044.png : 1
+                     img009-045.png : 1
+                     img009-046.png : 1
+                     img009-047.png : 1
+                     img009-048.png : 1
+                     img009-049.png : 1
+                     img009-050.png : 1
+                     img009-051.png : 1
+                     img009-052.png : 1
+                     img009-053.png : 1
+                     img009-054.png : 1
+                     img009-055.png : 1
+                     img010-001.png : 1
+                     img010-002.png : 1
+                     img010-003.png : 1
+                     img010-004.png : 1
+                     img010-005.png : 1
+
+
+
+                     img010-006.png : 1
+                     img010-007.png : 1
+                     img010-008.png : 1
+                     img010-009.png : 1
+                     img010-010.png : 1
+                     img010-011.png : 1
+                     img010-012.png : 1
+                     img010-013.png : 1
+                     img010-014.png : 1
+                     img010-015.png : 1
+                     img010-016.png : 1
+                     img010-017.png : 1
+                     img010-018.png : 1
+                     img010-019.png : 1
+                     img010-020.png : 1
+                     img010-021.png : 1
+                     img010-022.png : 1
+                     img010-023.png : 1
+                     img010-024.png : 1
+                     img010-025.png : 1
+                     img010-026.png : 1
+                     img010-027.png : 1
+                     img010-028.png : 1
+                     img010-029.png : 1
+                     img010-030.png : 1
+                     img010-031.png : 1
+                     img010-032.png : 1
+                     img010-033.png : 1
+                     img010-034.png : 1
+                     img010-035.png : 1
+                     img010-036.png : 1
+                     img010-037.png : 1
+                     img010-038.png : 1
+                     img010-039.png : 1
+                     img010-040.png : 1
+                     img010-041.png : 1
+                     img010-042.png : 1
+                     img010-043.png : 1
+                     img010-044.png : 1
+                     img010-045.png : 1
+                     img010-046.png : 1
+                     img010-047.png : 1
+                     img010-048.png : 1
+                     img010-049.png : 1
+                     img010-050.png : 1
+                     img010-051.png : 1
+                     img010-052.png : 1
+                     img010-053.png : 1
+                     img010-054.png : 1
+                     img010-055.png : 1
+                     img011-001.png : 1
+                     img011-002.png : 1
+                     img011-003.png : 1
+                     img011-004.png : 1
+                     img011-005.png : 1
+                     img011-006.png : 1
+
+
+
+                     img011-007.png : 1
+                     img011-008.png : 1
+                     img011-009.png : 1
+                     img011-010.png : 1
+                     img011-011.png : 1
+                     img011-012.png : 1
+                     img011-013.png : 1
+                     img011-014.png : 1
+                     img011-015.png : 1
+                     img011-016.png : 1
+                     img011-017.png : 1
+                     img011-018.png : 1
+                     img011-019.png : 1
+                     img011-020.png : 1
+                     img011-021.png : 1
+                     img011-022.png : 1
+                     img011-023.png : 1
+                     img011-024.png : 1
+                     img011-025.png : 1
+                     img011-026.png : 1
+                     img011-027.png : 1
+                     img011-028.png : 1
+                     img011-029.png : 1
+                     img011-030.png : 1
+                     img011-031.png : 1
+                     img011-032.png : 1
+                     img011-033.png : 1
+                     img011-034.png : 1
+                     img011-035.png : 1
+                     img011-036.png : 1
+                     img011-037.png : 1
+                     img011-038.png : 1
+                     img011-039.png : 1
+                     img011-040.png : 1
+                     img011-041.png : 1
+                     img011-042.png : 1
+                     img011-043.png : 1
+                     img011-044.png : 1
+                     img011-045.png : 1
+                     img011-046.png : 1
+                     img011-047.png : 1
+                     img011-048.png : 1
+                     img011-049.png : 1
+                     img011-050.png : 1
+                     img011-051.png : 1
+                     img011-052.png : 1
+                     img011-053.png : 1
+                     img011-054.png : 1
+                     img011-055.png : 1
+                     img012-001.png : 1
+                     img012-002.png : 1
+                     img012-003.png : 1
+                     img012-004.png : 1
+                     img012-005.png : 1
+                     img012-006.png : 1
+                     img012-007.png : 1
+
+
+
+                     img012-008.png : 1
+                     img012-009.png : 1
+                     img012-010.png : 1
+                     img012-011.png : 1
+                     img012-012.png : 1
+                     img012-013.png : 1
+                     img012-014.png : 1
+                     img012-015.png : 1
+                     img012-016.png : 1
+                     img012-017.png : 1
+                     img012-018.png : 1
+                     img012-019.png : 1
+                     img012-020.png : 1
+                     img012-021.png : 1
+                     img012-022.png : 1
+                     img012-023.png : 1
+                     img012-024.png : 1
+                     img012-025.png : 1
+                     img012-026.png : 1
+                     img012-027.png : 1
+                     img012-028.png : 1
+                     img012-029.png : 1
+                     img012-030.png : 1
+                     img012-031.png : 1
+                     img012-032.png : 1
+                     img012-033.png : 1
+                     img012-034.png : 1
+                     img012-035.png : 1
+                     img012-036.png : 1
+                     img012-037.png : 1
+                     img012-038.png : 1
+                     img012-039.png : 1
+                     img012-040.png : 1
+                     img012-041.png : 1
+                     img012-042.png : 1
+                     img012-043.png : 1
+                     img012-044.png : 1
+                     img012-045.png : 1
+                     img012-046.png : 1
+                     img012-047.png : 1
+                     img012-048.png : 1
+                     img012-049.png : 1
+                     img012-050.png : 1
+                     img012-051.png : 1
+                     img012-052.png : 1
+                     img012-053.png : 1
+                     img012-054.png : 1
+                     img012-055.png : 1
+                     img013-001.png : 1
+                     img013-002.png : 1
+                     img013-003.png : 1
+                     img013-004.png : 1
+                     img013-005.png : 1
+                     img013-006.png : 1
+                     img013-007.png : 1
+                     img013-008.png : 1
+
+
+
+                     img013-009.png : 1
+                     img013-010.png : 1
+                     img013-011.png : 1
+                     img013-012.png : 1
+                     img013-013.png : 1
+                     img013-014.png : 1
+                     img013-015.png : 1
+                     img013-016.png : 1
+                     img013-017.png : 1
+                     img013-018.png : 1
+                     img013-019.png : 1
+                     img013-020.png : 1
+                     img013-021.png : 1
+                     img013-022.png : 1
+                     img013-023.png : 1
+                     img013-024.png : 1
+                     img013-025.png : 1
+                     img013-026.png : 1
+                     img013-027.png : 1
+                     img013-028.png : 1
+                     img013-029.png : 1
+                     img013-030.png : 1
+                     img013-031.png : 1
+                     img013-032.png : 1
+                     img013-033.png : 1
+                     img013-034.png : 1
+                     img013-035.png : 1
+                     img013-036.png : 1
+                     img013-037.png : 1
+                     img013-038.png : 1
+                     img013-039.png : 1
+                     img013-040.png : 1
+                     img013-041.png : 1
+                     img013-042.png : 1
+                     img013-043.png : 1
+                     img013-044.png : 1
+                     img013-045.png : 1
+                     img013-046.png : 1
+                     img013-047.png : 1
+                     img013-048.png : 1
+                     img013-049.png : 1
+                     img013-050.png : 1
+                     img013-051.png : 1
+                     img013-052.png : 1
+                     img013-053.png : 1
+                     img013-054.png : 1
+                     img013-055.png : 1
+                     img014-001.png : 1
+                     img014-002.png : 1
+                     img014-003.png : 1
+                     img014-004.png : 1
+                     img014-005.png : 1
+                     img014-006.png : 1
+                     img014-007.png : 1
+                     img014-008.png : 1
+                     img014-009.png : 1
+
+
+
+                     img014-010.png : 1
+                     img014-011.png : 1
+                     img014-012.png : 1
+                     img014-013.png : 1
+                     img014-014.png : 1
+                     img014-015.png : 1
+                     img014-016.png : 1
+                     img014-017.png : 1
+                     img014-018.png : 1
+                     img014-019.png : 1
+                     img014-020.png : 1
+                     img014-021.png : 1
+                     img014-022.png : 1
+                     img014-023.png : 1
+                     img014-024.png : 1
+                     img014-025.png : 1
+                     img014-026.png : 1
+                     img014-027.png : 1
+                     img014-028.png : 1
+                     img014-029.png : 1
+                     img014-030.png : 1
+                     img014-031.png : 1
+                     img014-032.png : 1
+                     img014-033.png : 1
+                     img014-034.png : 1
+                     img014-035.png : 1
+                     img014-036.png : 1
+                     img014-037.png : 1
+                     img014-038.png : 1
+                     img014-039.png : 1
+                     img014-040.png : 1
+                     img014-041.png : 1
+                     img014-042.png : 1
+                     img014-043.png : 1
+                     img014-044.png : 1
+                     img014-045.png : 1
+                     img014-046.png : 1
+                     img014-047.png : 1
+                     img014-048.png : 1
+                     img014-049.png : 1
+                     img014-050.png : 1
+                     img014-051.png : 1
+                     img014-052.png : 1
+                     img014-053.png : 1
+                     img014-054.png : 1
+                     img014-055.png : 1
+                     img015-001.png : 1
+                     img015-002.png : 1
+                     img015-003.png : 1
+                     img015-004.png : 1
+                     img015-005.png : 1
+                     img015-006.png : 1
+                     img015-007.png : 1
+                     img015-008.png : 1
+                     img015-009.png : 1
+                     img015-010.png : 1
+
+
+
+                     img015-011.png : 1
+                     img015-012.png : 1
+                     img015-013.png : 1
+                     img015-014.png : 1
+                     img015-015.png : 1
+                     img015-016.png : 1
+                     img015-017.png : 1
+                     img015-018.png : 1
+                     img015-019.png : 1
+                     img015-020.png : 1
+                     img015-021.png : 1
+                     img015-022.png : 1
+                     img015-023.png : 1
+                     img015-024.png : 1
+                     img015-025.png : 1
+                     img015-026.png : 1
+                     img015-027.png : 1
+                     img015-028.png : 1
+                     img015-029.png : 1
+                     img015-030.png : 1
+                     img015-031.png : 1
+                     img015-032.png : 1
+                     img015-033.png : 1
+                     img015-034.png : 1
+                     img015-035.png : 1
+                     img015-036.png : 1
+                     img015-037.png : 1
+                     img015-038.png : 1
+                     img015-039.png : 1
+                     img015-040.png : 1
+                     img015-041.png : 1
+                     img015-042.png : 1
+                     img015-043.png : 1
+                     img015-044.png : 1
+                     img015-045.png : 1
+                     img015-046.png : 1
+                     img015-047.png : 1
+                     img015-048.png : 1
+                     img015-049.png : 1
+                     img015-050.png : 1
+                     img015-051.png : 1
+                     img015-052.png : 1
+                     img015-053.png : 1
+                     img015-054.png : 1
+                     img015-055.png : 1
+                     img016-001.png : 1
+                     img016-002.png : 1
+                     img016-003.png : 1
+                     img016-004.png : 1
+                     img016-005.png : 1
+                     img016-006.png : 1
+                     img016-007.png : 1
+                     img016-008.png : 1
+                     img016-009.png : 1
+                     img016-010.png : 1
+                     img016-011.png : 1
+
+
+
+                     img016-012.png : 1
+                     img016-013.png : 1
+                     img016-014.png : 1
+                     img016-015.png : 1
+                     img016-016.png : 1
+                     img016-017.png : 1
+                     img016-018.png : 1
+                     img016-019.png : 1
+                     img016-020.png : 1
+                     img016-021.png : 1
+                     img016-022.png : 1
+                     img016-023.png : 1
+                     img016-024.png : 1
+                     img016-025.png : 1
+                     img016-026.png : 1
+                     img016-027.png : 1
+                     img016-028.png : 1
+                     img016-029.png : 1
+                     img016-030.png : 1
+                     img016-031.png : 1
+                     img016-032.png : 1
+                     img016-033.png : 1
+                     img016-034.png : 1
+                     img016-035.png : 1
+                     img016-036.png : 1
+                     img016-037.png : 1
+                     img016-038.png : 1
+                     img016-039.png : 1
+                     img016-040.png : 1
+                     img016-041.png : 1
+                     img016-042.png : 1
+                     img016-043.png : 1
+                     img016-044.png : 1
+                     img016-045.png : 1
+                     img016-046.png : 1
+                     img016-047.png : 1
+                     img016-048.png : 1
+                     img016-049.png : 1
+                     img016-050.png : 1
+                     img016-051.png : 1
+                     img016-052.png : 1
+                     img016-053.png : 1
+                     img016-054.png : 1
+                     img016-055.png : 1
+                     img017-001.png : 1
+                     img017-002.png : 1
+                     img017-003.png : 1
+                     img017-004.png : 1
+                     img017-005.png : 1
+                     img017-006.png : 1
+                     img017-007.png : 1
+                     img017-008.png : 1
+                     img017-009.png : 1
+                     img017-010.png : 1
+                     img017-011.png : 1
+                     img017-012.png : 1
+
+
+
+                     img017-013.png : 1
+                     img017-014.png : 1
+                     img017-015.png : 1
+                     img017-016.png : 1
+                     img017-017.png : 1
+                     img017-018.png : 1
+                     img017-019.png : 1
+                     img017-020.png : 1
+                     img017-021.png : 1
+                     img017-022.png : 1
+                     img017-023.png : 1
+                     img017-024.png : 1
+                     img017-025.png : 1
+                     img017-026.png : 1
+                     img017-027.png : 1
+                     img017-028.png : 1
+                     img017-029.png : 1
+                     img017-030.png : 1
+                     img017-031.png : 1
+                     img017-032.png : 1
+                     img017-033.png : 1
+                     img017-034.png : 1
+                     img017-035.png : 1
+                     img017-036.png : 1
+                     img017-037.png : 1
+                     img017-038.png : 1
+                     img017-039.png : 1
+                     img017-040.png : 1
+                     img017-041.png : 1
+                     img017-042.png : 1
+                     img017-043.png : 1
+                     img017-044.png : 1
+                     img017-045.png : 1
+                     img017-046.png : 1
+                     img017-047.png : 1
+                     img017-048.png : 1
+                     img017-049.png : 1
+                     img017-050.png : 1
+                     img017-051.png : 1
+                     img017-052.png : 1
+                     img017-053.png : 1
+                     img017-054.png : 1
+                     img017-055.png : 1
+                     img018-001.png : 1
+                     img018-002.png : 1
+                     img018-003.png : 1
+                     img018-004.png : 1
+                     img018-005.png : 1
+                     img018-006.png : 1
+                     img018-007.png : 1
+                     img018-008.png : 1
+                     img018-009.png : 1
+                     img018-010.png : 1
+                     img018-011.png : 1
+                     img018-012.png : 1
+                     img018-013.png : 1
+
+
+
+                     img018-014.png : 1
+                     img018-015.png : 1
+                     img018-016.png : 1
+                     img018-017.png : 1
+                     img018-018.png : 1
+                     img018-019.png : 1
+                     img018-020.png : 1
+                     img018-021.png : 1
+                     img018-022.png : 1
+                     img018-023.png : 1
+                     img018-024.png : 1
+                     img018-025.png : 1
+                     img018-026.png : 1
+                     img018-027.png : 1
+                     img018-028.png : 1
+                     img018-029.png : 1
+                     img018-030.png : 1
+                     img018-031.png : 1
+                     img018-032.png : 1
+                     img018-033.png : 1
+                     img018-034.png : 1
+                     img018-035.png : 1
+                     img018-036.png : 1
+                     img018-037.png : 1
+                     img018-038.png : 1
+                     img018-039.png : 1
+                     img018-040.png : 1
+                     img018-041.png : 1
+                     img018-042.png : 1
+                     img018-043.png : 1
+                     img018-044.png : 1
+                     img018-045.png : 1
+                     img018-046.png : 1
+                     img018-047.png : 1
+                     img018-048.png : 1
+                     img018-049.png : 1
+                     img018-050.png : 1
+                     img018-051.png : 1
+                     img018-052.png : 1
+                     img018-053.png : 1
+                     img018-054.png : 1
+                     img018-055.png : 1
+                     img019-001.png : 1
+                     img019-002.png : 1
+                     img019-003.png : 1
+                     img019-004.png : 1
+                     img019-005.png : 1
+                     img019-006.png : 1
+                     img019-007.png : 1
+                     img019-008.png : 1
+                     img019-009.png : 1
+                     img019-010.png : 1
+                     img019-011.png : 1
+                     img019-012.png : 1
+                     img019-013.png : 1
+                     img019-014.png : 1
+
+
+
+                     img019-015.png : 1
+                     img019-016.png : 1
+                     img019-017.png : 1
+                     img019-018.png : 1
+                     img019-019.png : 1
+                     img019-020.png : 1
+                     img019-021.png : 1
+                     img019-022.png : 1
+                     img019-023.png : 1
+                     img019-024.png : 1
+                     img019-025.png : 1
+                     img019-026.png : 1
+                     img019-027.png : 1
+                     img019-028.png : 1
+                     img019-029.png : 1
+                     img019-030.png : 1
+                     img019-031.png : 1
+                     img019-032.png : 1
+                     img019-033.png : 1
+                     img019-034.png : 1
+                     img019-035.png : 1
+                     img019-036.png : 1
+                     img019-037.png : 1
+                     img019-038.png : 1
+                     img019-039.png : 1
+                     img019-040.png : 1
+                     img019-041.png : 1
+                     img019-042.png : 1
+                     img019-043.png : 1
+                     img019-044.png : 1
+                     img019-045.png : 1
+                     img019-046.png : 1
+                     img019-047.png : 1
+                     img019-048.png : 1
+                     img019-049.png : 1
+                     img019-050.png : 1
+                     img019-051.png : 1
+                     img019-052.png : 1
+                     img019-053.png : 1
+                     img019-054.png : 1
+                     img019-055.png : 1
+                     img020-001.png : 1
+                     img020-002.png : 1
+                     img020-003.png : 1
+                     img020-004.png : 1
+                     img020-005.png : 1
+                     img020-006.png : 1
+                     img020-007.png : 1
+                     img020-008.png : 1
+                     img020-009.png : 1
+                     img020-010.png : 1
+                     img020-011.png : 1
+                     img020-012.png : 1
+                     img020-013.png : 1
+                     img020-014.png : 1
+                     img020-015.png : 1
+
+
+
+                     img020-016.png : 1
+                     img020-017.png : 1
+                     img020-018.png : 1
+                     img020-019.png : 1
+                     img020-020.png : 1
+                     img020-021.png : 1
+                     img020-022.png : 1
+                     img020-023.png : 1
+                     img020-024.png : 1
+                     img020-025.png : 1
+                     img020-026.png : 1
+                     img020-027.png : 1
+                     img020-028.png : 1
+                     img020-029.png : 1
+                     img020-030.png : 1
+                     img020-031.png : 1
+                     img020-032.png : 1
+                     img020-033.png : 1
+                     img020-034.png : 1
+                     img020-035.png : 1
+                     img020-036.png : 1
+                     img020-037.png : 1
+                     img020-038.png : 1
+                     img020-039.png : 1
+                     img020-040.png : 1
+                     img020-041.png : 1
+                     img020-042.png : 1
+                     img020-043.png : 1
+                     img020-044.png : 1
+                     img020-045.png : 1
+                     img020-046.png : 1
+                     img020-047.png : 1
+                     img020-048.png : 1
+                     img020-049.png : 1
+                     img020-050.png : 1
+                     img020-051.png : 1
+                     img020-052.png : 1
+                     img020-053.png : 1
+                     img020-054.png : 1
+                     img020-055.png : 1
+                     img021-001.png : 1
+                     img021-002.png : 1
+                     img021-003.png : 1
+                     img021-004.png : 1
+                     img021-005.png : 1
+                     img021-006.png : 1
+                     img021-007.png : 1
+                     img021-008.png : 1
+                     img021-009.png : 1
+                     img021-010.png : 1
+                     img021-011.png : 1
+                     img021-012.png : 1
+                     img021-013.png : 1
+                     img021-014.png : 1
+                     img021-015.png : 1
+                     img021-016.png : 1
+
+
+
+                     img021-017.png : 1
+                     img021-018.png : 1
+                     img021-019.png : 1
+                     img021-020.png : 1
+                     img021-021.png : 1
+                     img021-022.png : 1
+                     img021-023.png : 1
+                     img021-024.png : 1
+                     img021-025.png : 1
+                     img021-026.png : 1
+                     img021-027.png : 1
+                     img021-028.png : 1
+                     img021-029.png : 1
+                     img021-030.png : 1
+                     img021-031.png : 1
+                     img021-032.png : 1
+                     img021-033.png : 1
+                     img021-034.png : 1
+                     img021-035.png : 1
+                     img021-036.png : 1
+                     img021-037.png : 1
+                     img021-038.png : 1
+                     img021-039.png : 1
+                     img021-040.png : 1
+                     img021-041.png : 1
+                     img021-042.png : 1
+                     img021-043.png : 1
+                     img021-044.png : 1
+                     img021-045.png : 1
+                     img021-046.png : 1
+                     img021-047.png : 1
+                     img021-048.png : 1
+                     img021-049.png : 1
+                     img021-050.png : 1
+                     img021-051.png : 1
+                     img021-052.png : 1
+                     img021-053.png : 1
+                     img021-054.png : 1
+                     img021-055.png : 1
+                     img022-001.png : 1
+                     img022-002.png : 1
+                     img022-003.png : 1
+                     img022-004.png : 1
+                     img022-005.png : 1
+                     img022-006.png : 1
+                     img022-007.png : 1
+                     img022-008.png : 1
+                     img022-009.png : 1
+                     img022-010.png : 1
+                     img022-011.png : 1
+                     img022-012.png : 1
+                     img022-013.png : 1
+                     img022-014.png : 1
+                     img022-015.png : 1
+                     img022-016.png : 1
+                     img022-017.png : 1
+
+
+
+                     img022-018.png : 1
+                     img022-019.png : 1
+                     img022-020.png : 1
+                     img022-021.png : 1
+                     img022-022.png : 1
+                     img022-023.png : 1
+                     img022-024.png : 1
+                     img022-025.png : 1
+                     img022-026.png : 1
+                     img022-027.png : 1
+                     img022-028.png : 1
+                     img022-029.png : 1
+                     img022-030.png : 1
+                     img022-031.png : 1
+                     img022-032.png : 1
+                     img022-033.png : 1
+                     img022-034.png : 1
+                     img022-035.png : 1
+                     img022-036.png : 1
+                     img022-037.png : 1
+                     img022-038.png : 1
+                     img022-039.png : 1
+                     img022-040.png : 1
+                     img022-041.png : 1
+                     img022-042.png : 1
+                     img022-043.png : 1
+                     img022-044.png : 1
+                     img022-045.png : 1
+                     img022-046.png : 1
+                     img022-047.png : 1
+                     img022-048.png : 1
+                     img022-049.png : 1
+                     img022-050.png : 1
+                     img022-051.png : 1
+                     img022-052.png : 1
+                     img022-053.png : 1
+                     img022-054.png : 1
+                     img022-055.png : 1
+                     img023-001.png : 1
+                     img023-002.png : 1
+
+          In [22]: print("First 20 labels:")
+                   print(y[:20])
+
+                       print("\nNumber of different classes:")
+                       print(len(np.unique(y)))
+
+                       print("\nClasses:")
+                       print(np.unique(y))
+
+
+
+
+
+
+                     X shape: (1212, 784)
+                     y shape: (1212,)
+
+                     First 20 labels:
+                     ['img001-001.png' 'img001-002.png' 'img001-003.png' 'img001-004.png'
+                      'img001-005.png' 'img001-006.png' 'img001-007.png' 'img001-008.png'
+                      'img001-009.png' 'img001-010.png' 'img001-011.png' 'img001-012.png'
+                      'img001-013.png' 'img001-014.png' 'img001-015.png' 'img001-016.png'
+                      'img001-017.png' 'img001-018.png' 'img001-019.png' 'img001-020.png']
+
+          In [26]: print("First 20 labels:")
+                   print(y[:20])
+
+                       print("\nNumber of different classes:")
+                       print(len(np.unique(y)))
+
+                       print("\nClasses:")
+                       print(np.unique(y))
+
+                     First 20 labels:
+                     ['img001' 'img001' 'img001' 'img001' 'img001' 'img001' 'img001' 'img001'
+                      'img001' 'img001' 'img001' 'img001' 'img001' 'img001' 'img001' 'img001'
+                      'img001' 'img001' 'img001' 'img001']
+
+                     Number of different classes:
+                     23
+
+                     Classes:
+                     ['img001' 'img002' 'img003' 'img004' 'img005' 'img006' 'img007' 'img008'
+                      'img009' 'img010' 'img011' 'img012' 'img013' 'img014' 'img015' 'img016'
+                      'img017' 'img018' 'img019' 'img020' 'img021' 'img022' 'img023']
+
+          In [87]: plt.figure(figsize=(10, 5))
+
+                       for i in range(10):
+
+                            plt.subplot(2, 5, i + 1)
+
+                            plt.imshow(X[i], cmap="gray")
+
+                            plt.title(y[i])
+
+                            plt.axis("off")
+
+                       plt.tight_layout()
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/ima
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [30]: X = X / 255.0
+
+                       print("Minimum pixel value:", X.min())
+                       print("Maximum pixel value:", X.max())
+
+                     Minimum pixel value: 0.0
+                     Maximum pixel value: 1.0
+
+          In [31]: X = X.reshape(X.shape[0], -1)
+
+                       print("New image shape:", X.shape)
+
+                     New image shape: (1212, 784)
+
+          In [32]: encoder = LabelEncoder()
+
+                       y = encoder.fit_transform(y)
+
+                       print("Number of classes:", len(encoder.classes_))
+
+                       print("Class names:")
+                       print(encoder.classes_)
+
+                     Number of classes: 23
+                     Class names:
+                     ['img001' 'img002' 'img003' 'img004' 'img005' 'img006' 'img007' 'img008'
+                      'img009' 'img010' 'img011' 'img012' 'img013' 'img014' 'img015' 'img016'
+                      'img017' 'img018' 'img019' 'img020' 'img021' 'img022' 'img023']
+
+          In [33]: unique, counts = np.unique(y, return_counts=True)
+
+                       print("Images in each class:\n")
+
+                       for label, count in zip(unique, counts):
+                           print(label, ":", count)
+
+
+
+
+
+
+                     Images in each class:
+
+                     0 : 55
+                     1 : 55
+                     2 : 55
+                     3 : 55
+                     4 : 55
+                     5 : 55
+                     6 : 55
+                     7 : 55
+                     8 : 55
+                     9 : 55
+                     10 : 55
+                     11 : 55
+                     12 : 55
+                     13 : 55
+                     14 : 55
+                     15 : 55
+                     16 : 55
+                     17 : 55
+                     18 : 55
+                     19 : 55
+                     20 : 55
+                     21 : 55
+                     22 : 2
+
+          In [45]: X_train, X_test, y_train, y_test = train_test_split(
+                       X,
+                       y,
+                       test_size=0.20,
+                       random_state=42,
+                       stratify=y
+                   )
+
+
+          In [46]: class SimplePerceptron:
+
+                            def __init__(self, learning_rate=0.01, epochs=10):
+
+                                  self.learning_rate = learning_rate
+                                  self.epochs = epochs
+
+                                  self.weights = None
+                                  self.bias = None
+
+                                  self.errors = []
+
+                            def fit(self, X, y):
+
+                                  number_of_classes = len(np.unique(y))
+
+                                  number_of_features = X.shape[1]
+                                  self.weights = np.zeros((number_of_classes, number_of_features))
+                                  self.bias = np.zeros(number_of_classes)
+
+                                  for epoch in range(self.epochs):
+
+
+
+
+                                        errors = 0
+
+                                        for i in range(len(X)):
+                                            scores = np.dot(self.weights,X[i]) + self.bias
+
+                                                prediction = np.argmax(scores)
+
+                                                actual = y[i]
+
+                                                if prediction != actual:
+
+                                                   self.weights[actual] += ( self.learning_rate * X[i])
+
+                                                   self.weights[prediction] -= (self.learning_rate * X[i])
+
+                                                   self.bias[actual] += self.learning_rate
+
+                                                   self.bias[prediction] -= self.learning_rate
+
+                                                   errors += 1
+
+                                        self.errors.append(errors)
+
+                                        print("Epoch",epoch + 1,"Errors:",errors)
+
+                                  return self
+
+                            def predict(self, X):
+
+                                  scores = np.dot(X,self.weights.T) + self.bias
+
+                                  return np.argmax(scores, axis=1)
+
+
+          In [48]: pla = SimplePerceptron(learning_rate=0.01,epochs=10)
+
+                       pla.fit(X_train, y_train)
+
+                     Epoch 1 Errors: 925
+                     Epoch 2 Errors: 887
+                     Epoch 3 Errors: 845
+                     Epoch 4 Errors: 799
+                     Epoch 5 Errors: 781
+                     Epoch 6 Errors: 756
+                     Epoch 7 Errors: 729
+                     Epoch 8 Errors: 704
+                     Epoch 9 Errors: 714
+                     Epoch 10 Errors: 703
+          Out[48]:     <__main__.SimplePerceptron at 0x1c9566e12b0>
+
+
+          In [50]: y_pred_pla = pla.predict(X_test)
+
+                       print("PLA predictions:")
+                       print(y_pred_pla[:20])
+
+
+
+
+
+
+                     PLA predictions:
+                     [10 7 7 7 7 16             4   3   7   7   7   7   7   7   7   4   7   7   7   7]
+
+          In [51]: pla_accuracy = accuracy_score(y_test,y_pred_pla)
+
+                       pla_precision = precision_score(y_test,y_pred_pla,average="macro",zero_division=0)
+
+                       pla_recall = recall_score(y_test,y_pred_pla,average="macro",zero_division=0)
+
+                       pla_f1 = f1_score(y_test,y_pred_pla,average="macro",zero_division=0)
+
+                       print("\nPLA Results")
+
+                       print("Accuracy :", round(pla_accuracy, 4))
+                       print("Precision:", round(pla_precision, 4))
+                       print("Recall   :", round(pla_recall, 4))
+                       print("F1 Score :", round(pla_f1, 4))
+
+                     PLA Results
+                     ---------------------
+                     Accuracy : 0.1605
+                     Precision: 0.1973
+                     Recall   : 0.1542
+                     F1 Score : 0.1372
+
+          In [89]: cm_pla = confusion_matrix(y_test,y_pred_pla)
+
+                       plt.figure(figsize=(10, 8))
+
+                       plt.imshow(cm_pla)
+
+                       plt.title("PLA Confusion Matrix")
+
+                       plt.xlabel("Predicted Label")
+                       plt.ylabel("Actual Label")
+
+                       plt.colorbar()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/pla
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [88]: plt.figure(figsize=(7, 5))
+
+                       plt.plot(range(1, len(pla.errors) + 1),pla.errors,marker="o")
+
+                       plt.xlabel("Epoch")
+                       plt.ylabel("Number of Errors")
+
+                       plt.title("PLA Training Error")
+
+                       plt.grid()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/pla
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [54]: mlp = MLPClassifier(hidden_layer_sizes=(128,),activation="relu",solver="adam",learn
+
+                       mlp.fit(X_train, y_train)
+
+
+
+
+
+
+                     Iteration 1, loss = 3.26481578
+                     Iteration 2, loss = 3.10241889
+                     Iteration 3, loss = 3.07205133
+                     Iteration 4, loss = 3.00203292
+                     Iteration 5, loss = 2.98723692
+                     Iteration 6, loss = 2.94041798
+                     Iteration 7, loss = 2.88860861
+                     Iteration 8, loss = 2.84038735
+                     Iteration 9, loss = 2.77667605
+                     Iteration 10, loss = 2.73626394
+                     Iteration 11, loss = 2.67552358
+                     Iteration 12, loss = 2.66573086
+                     Iteration 13, loss = 2.60428417
+                     Iteration 14, loss = 2.54114131
+                     Iteration 15, loss = 2.48463809
+                     Iteration 16, loss = 2.43619462
+                     Iteration 17, loss = 2.39847554
+                     Iteration 18, loss = 2.34691634
+                     Iteration 19, loss = 2.31451714
+                     Iteration 20, loss = 2.25321083
+                     Iteration 21, loss = 2.27576780
+                     Iteration 22, loss = 2.18302389
+                     Iteration 23, loss = 2.16397287
+                     Iteration 24, loss = 2.12349647
+                     Iteration 25, loss = 2.10665619
+                     Iteration 26, loss = 2.08534706
+                     Iteration 27, loss = 2.04541368
+                     Iteration 28, loss = 2.02981789
+                     Iteration 29, loss = 1.97022498
+                     Iteration 30, loss = 1.93820520
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (30) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+          Out[54]:     ▾                                  MLPClassifier                           i   ?
+
+
+                       MLPClassifier(batch_size=32, hidden_layer_sizes=(128,), max_iter=30,
+                                            random_state=42, verbose=True)
+
+
+          In [55]: y_pred_mlp = mlp.predict(X_test)
+
+                       print("First 20 predictions:")
+                       print(y_pred_mlp[:20])
+
+                     First 20 predictions:
+                     [10 8 20 1 12 16 6           1   5   1 17   4   1 16   5 16 15 12   7   5]
+
+          In [56]: mlp_accuracy = accuracy_score(y_test,y_pred_mlp)
+
+                       mlp_precision = precision_score(y_test,y_pred_mlp,average="macro",zero_division=0)
+
+                       mlp_recall = recall_score(y_test,y_pred_mlp,average="macro",zero_division=0)
+
+                       mlp_f1 = f1_score(y_test,y_pred_mlp,average="macro",zero_division=0)
+
+
+
+
+
+
+                       print("\nMLP Results")
+                       print("---------------------")
+
+                       print("Accuracy :", round(mlp_accuracy, 4))
+                       print("Precision:", round(mlp_precision, 4))
+                       print("Recall   :", round(mlp_recall, 4))
+                       print("F1 Score :", round(mlp_f1, 4))
+
+                     MLP Results
+                     ---------------------
+                     Accuracy : 0.3868
+                     Precision: 0.4614
+                     Recall   : 0.3715
+                     F1 Score : 0.3667
+
+          In [90]: cm_mlp = confusion_matrix(y_test,y_pred_mlp)
+
+                       plt.figure(figsize=(10, 8))
+
+                       plt.imshow(cm_mlp)
+
+                       plt.title("MLP Confusion Matrix")
+
+                       plt.xlabel("Predicted Label")
+                       plt.ylabel("Actual Label")
+
+                       plt.colorbar()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/mlp
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [91]: plt.figure(figsize=(7, 5))
+
+                       plt.plot(mlp.loss_curve_)
+
+                       plt.xlabel("Iteration")
+                       plt.ylabel("Loss")
+
+                       plt.title("MLP Training Loss")
+
+                       plt.grid()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/mlp
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [59]: settings = [
+
+                            {
+                                  "activation": "relu",
+                                  "solver": "adam",
+                                  "learning_rate": 0.001,
+                                  "batch_size": 32
+                            },
+
+                            {
+                                  "activation": "relu",
+                                  "solver": "sgd",
+                                  "learning_rate": 0.01,
+                                  "batch_size": 32
+                            },
+
+                            {
+                                  "activation": "tanh",
+                                  "solver": "adam",
+                                  "learning_rate": 0.001,
+                                  "batch_size": 32
+                            },
+
+                            {
+                                  "activation": "relu",
+                                  "solver": "adam",
+                                  "learning_rate": 0.0001,
+
+
+
+
+                                  "batch_size": 64
+                            }
+                       ]
+
+          In [60]: results = []
+
+                       for setting in settings:
+                           print("Testing:", setting)
+
+                            model = MLPClassifier(hidden_layer_sizes=(128,),activation=setting["activation"
+
+                            model.fit(X_train, y_train)
+
+                            predictions = model.predict(X_test)
+
+                            accuracy = accuracy_score(y_test,predictions)
+
+                            results.append({"Activation": setting["activation"],"Optimizer": setting["solve
+
+                            print("Accuracy:",round(accuracy, 4))
+
+                     Testing: {'activation': 'relu', 'solver': 'adam', 'learning_rate': 0.001, 'batch_siz
+                     e': 32}
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (30) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+                     Accuracy: 0.3868
+                     Testing: {'activation': 'relu', 'solver': 'sgd', 'learning_rate': 0.01, 'batch_siz
+                     e': 32}
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (30) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+                     Accuracy: 0.4198
+                     Testing: {'activation': 'tanh', 'solver': 'adam', 'learning_rate': 0.001, 'batch_siz
+                     e': 32}
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (30) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+                     Accuracy: 0.4444
+                     Testing: {'activation': 'relu', 'solver': 'adam', 'learning_rate': 0.0001, 'batch_si
+                     ze': 64}
+                     Accuracy: 0.2634
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (30) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+
+          In [62]: results_df = pd.DataFrame(results)
+
+                       print(results_df)
+
+
+
+
+
+
+                         Activation Optimizer   Learning Rate   Batch Size   Accuracy
+                     0         relu      adam          0.0010           32   0.386831
+                     1         relu       sgd          0.0100           32   0.419753
+                     2         tanh      adam          0.0010           32   0.444444
+                     3         relu      adam          0.0001           64   0.263374
+
+          In [63]: best_row = results_df.loc[results_df["Accuracy"].idxmax()]
+
+                         print("Chosen configuration:")
+                         print(best_row)
+
+                     Chosen configuration:
+                     Activation            tanh
+                     Optimizer             adam
+                     Learning Rate       0.001
+                     Batch Size              32
+                     Accuracy         0.444444
+                     Name: 2, dtype: object
+
+          In [64]: best_mlp = MLPClassifier(hidden_layer_sizes=(128,),activation=best_row["Activation"
+
+                         best_mlp.fit(X_train, y_train)
+
+
+
+
+
+
+                     Iteration 1, loss = 3.26324687
+                     Iteration 2, loss = 3.09345592
+                     Iteration 3, loss = 3.06048736
+                     Iteration 4, loss = 3.00521017
+                     Iteration 5, loss = 2.96536477
+                     Iteration 6, loss = 2.90723512
+                     Iteration 7, loss = 2.83432531
+                     Iteration 8, loss = 2.77743673
+                     Iteration 9, loss = 2.70478501
+                     Iteration 10, loss = 2.63482022
+                     Iteration 11, loss = 2.59672403
+                     Iteration 12, loss = 2.53309904
+                     Iteration 13, loss = 2.55287886
+                     Iteration 14, loss = 2.40109240
+                     Iteration 15, loss = 2.35746681
+                     Iteration 16, loss = 2.32077455
+                     Iteration 17, loss = 2.24562768
+                     Iteration 18, loss = 2.20786299
+                     Iteration 19, loss = 2.18088760
+                     Iteration 20, loss = 2.13990363
+                     Iteration 21, loss = 2.12663848
+                     Iteration 22, loss = 2.02670772
+                     Iteration 23, loss = 2.04168478
+                     Iteration 24, loss = 1.99473581
+                     Iteration 25, loss = 1.97724282
+                     Iteration 26, loss = 1.94086055
+                     Iteration 27, loss = 1.91725711
+                     Iteration 28, loss = 1.85621791
+                     Iteration 29, loss = 1.85667511
+                     Iteration 30, loss = 1.79109476
+                     Iteration 31, loss = 1.79570307
+                     Iteration 32, loss = 1.79556748
+                     Iteration 33, loss = 1.73825863
+                     Iteration 34, loss = 1.71282411
+                     Iteration 35, loss = 1.68751208
+                     Iteration 36, loss = 1.66345053
+                     Iteration 37, loss = 1.65730557
+                     Iteration 38, loss = 1.64366034
+                     Iteration 39, loss = 1.59626601
+                     Iteration 40, loss = 1.59700200
+                     Iteration 41, loss = 1.58755752
+                     Iteration 42, loss = 1.66574246
+                     Iteration 43, loss = 1.55687853
+                     Iteration 44, loss = 1.49831908
+                     Iteration 45, loss = 1.49750612
+                     Iteration 46, loss = 1.52219848
+                     Iteration 47, loss = 1.50721480
+                     Iteration 48, loss = 1.48924574
+                     Iteration 49, loss = 1.46982687
+                     Iteration 50, loss = 1.42653164
+                     C:\Users\DHARSHINI\AppData\Local\Programs\Python\Python39\lib\site-packages\sklearn
+                     \neural_network\_multilayer_perceptron.py:691: ConvergenceWarning: Stochastic Optimi
+                     zer: Maximum iterations (50) reached and the optimization hasn't converged yet.
+                       warnings.warn(
+
+
+
+
+
+
+
+          Out[64]:     ▾                                  MLPClassifier                          i     ?
+
+
+                       MLPClassifier(activation='tanh', batch_size=32, hidden_layer_sizes=(128,),
+                                            max_iter=50, random_state=42, verbose=True)
+
+
+          In [65]: final_predictions = best_mlp.predict(X_test)
+
+          In [66]: final_accuracy = accuracy_score(y_test,final_predictions)
+
+                       final_precision = precision_score(y_test,final_predictions,average="macro",zero_div
+
+                       final_recall = recall_score(y_test,final_predictions,average="macro",zero_division=
+
+                       final_f1 = f1_score(y_test,final_predictions,average="macro",zero_division=0)
+
+                       print("\nFinal MLP Results")
+
+                       print("Accuracy :", round(final_accuracy, 4))
+                       print("Precision:", round(final_precision, 4))
+                       print("Recall   :", round(final_recall, 4))
+                       print("F1 Score :", round(final_f1, 4))
+
+                     Final MLP Results
+                     ---------------------
+                     Accuracy : 0.4362
+                     Precision: 0.467
+                     Recall   : 0.419
+                     F1 Score : 0.4187
+
+          In [67]: comparison = pd.DataFrame({
+
+                            "Metric": [
+                                "Accuracy",
+                                "Precision",
+                                "Recall",
+                                "F1 Score"
+                            ],
+
+                            "PLA": [
+                                pla_accuracy,
+                                pla_precision,
+                                pla_recall,
+                                pla_f1
+                            ],
+
+                            "MLP": [
+                                final_accuracy,
+                                final_precision,
+                                final_recall,
+                                final_f1
+                            ]
+                       })
+
+                       print(comparison)
+
+
+
+
+                             Metric          PLA        MLP
+                     0     Accuracy     0.160494   0.436214
+                     1    Precision     0.197327   0.467042
+                     2       Recall     0.154150   0.418972
+                     3     F1 Score     0.137236   0.418680
+
+          In [92]: comparison_plot = comparison.set_index("Metric")
+
+                         comparison_plot.plot( kind="bar",figsize=(8, 5))
+
+                         plt.title("PLA vs MLP")
+
+                         plt.ylabel("Score")
+
+                         plt.ylim(0, 1)
+
+                         plt.xticks(rotation=0)
+
+                         plt.grid(axis="y")
+
+                         plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/pla
+                         plt.show()
+
+
+
+
+          In [69]: print(classification_report(y_test,final_predictions,target_names=encoder.classes_,
+
+
+
+
+
+
+                                        precision      recall   f1-score    support
+
+                             img001             0.57    0.36       0.44           11
+                             img002             0.44    0.64       0.52           11
+                             img003             0.20    0.36       0.26           11
+                             img004             0.40    0.18       0.25           11
+                             img005             0.08    0.09       0.09           11
+                             img006             0.31    0.36       0.33           11
+                             img007             0.39    0.64       0.48           11
+                             img008             0.33    0.09       0.14           11
+                             img009             0.78    0.64       0.70           11
+                             img010             0.57    0.36       0.44           11
+                             img011             0.28    0.45       0.34           11
+                             img012             0.44    0.64       0.52           11
+                             img013             0.47    0.73       0.57           11
+                             img014             0.86    0.55       0.67           11
+                             img015             0.70    0.64       0.67           11
+                             img016             1.00    0.55       0.71           11
+                             img017             0.31    0.36       0.33           11
+                             img018             0.60    0.27       0.38           11
+                             img019             0.46    0.55       0.50           11
+                             img020             0.60    0.27       0.38           11
+                             img021             0.62    0.45       0.53           11
+                             img022             0.33    0.45       0.38           11
+                             img023             0.00    0.00       0.00            1
+
+                         accuracy                                  0.44          243
+                        macro avg               0.47    0.42       0.42          243
+                     weighted avg               0.49    0.44       0.44          243
+
+
+          In [93]: final_cm = confusion_matrix(y_test,final_predictions)
+
+                       plt.figure(figsize=(12, 10))
+
+                       plt.imshow(final_cm)
+
+                       plt.title("Final MLP Confusion Matrix")
+
+                       plt.xlabel("Predicted Label")
+                       plt.ylabel("Actual Label")
+
+                       plt.colorbar()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/mla
+                       plt.show()
+
+
+
+
+
+
+
+
+
+          In [73]: y_test_binary = label_binarize(y_test,classes=np.arange(len(encoder.classes_)))
+
+                       y_probability = best_mlp.predict_proba(X_test)
+
+                       fpr, tpr, thresholds = roc_curve(y_test_binary.ravel(),y_probability.ravel())
+
+                       roc_auc = auc(fpr, tpr)
+
+                       print("Micro-average ROC AUC:", round(roc_auc, 4))
+
+                     Micro-average ROC AUC: 0.8954
+
+          In [94]: plt.figure(figsize=(7, 5))
+
+                       plt.plot(fpr,tpr,label="MLP ROC curve")
+
+                       plt.plot([0, 1],[0, 1],linestyle="--")
+
+                       plt.xlabel("False Positive Rate")
+
+                       plt.ylabel("True Positive Rate")
+
+                       plt.title("MLP ROC Curve")
+
+
+
+
+
+                       plt.legend()
+
+                       plt.grid()
+
+                       plt.savefig("C:/Users/DHARSHINI/Downloads/sem5/ml_lab/Assignment_9/output_plots/mlp
+                       plt.show()
+
+
+
+
+          In [75]: comparison.to_csv("PLA_vs_MLP_results.csv",index=False)
+
+                       results_df.to_csv("MLP_hyperparameter_results.csv",index=False)
+
+                       print("Results saved successfully.")
+
+                     Results saved successfully.
+
+
+
+
+
+4     Justification for Chosen Hyperparameters
+For the MLP model, different hyperparameter values were considered for the learning rate, batch size,
+optimizer, activation function, and network size. The final configuration was selected based on the training
+performance and stability observed during the tuning process.
+
+    • Activation Function – ReLU:
+      ReLU was used in the hidden layer as it allows the network to learn nonlinear patterns and is suitable
+      for recognizing the different shapes and structures present in handwritten characters.
+    • Optimizer – Adam:
+      The Adam optimizer was selected because it provides adaptive learning rates and generally provides
+      stable and efficient convergence during training.
+    • Learning Rate – 0.001:
+      A learning rate of 0.001 was chosen as it provides a suitable balance between learning speed and training
+      stability.
+    • Batch Size – 32:
+      A batch size of 32 was used to provide a reasonable balance between computational efficiency and
+      model performance.
+    • Hidden Layer – 128 Neurons:
+      One hidden layer with 128 neurons was used to provide sufficient capacity for learning the character
+      patterns while keeping the model relatively simple.
+    • Number of Epochs – 30:
+      The model was trained for 30 epochs to provide sufficient training time for the network to learn the
+      features from the handwritten character images.
+
+
+5     Observations
+    • The Single Layer Perceptron provides a simple baseline for handwritten character classification.
+
+    • The MLP is able to learn nonlinear patterns using hidden layers and nonlinear activation functions.
+    • The choice of optimizer, learning rate, batch size, and activation function affects the training perfor-
+      mance of the MLP.
+    • The MLP provides greater learning capability than the single-layer Perceptron for complex handwritten
+      character patterns.
+
+    • Hyperparameter tuning helps identify a suitable configuration for achieving stable training and good
+      classification performance.
+
+\end{lstlisting}
+
+\end{document}

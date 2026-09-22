@@ -1,0 +1,242 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{float}
+
+\definecolor{codegray}{gray}{0.95}
+\lstset{
+backgroundcolor=\color{codegray},
+basicstyle=\ttfamily\small,
+frame=single,
+breaklines=true,
+columns=fullflexible
+}
+
+\title{\textbf{Clustering Human Activity Recognition Data}\\
+using K-Means, DBSCAN, and Hierarchical Clustering}
+\author{Nathaniel Christian\\Machine Learning\\Reg. No: 3122247001037}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Aim}
+To implement and analyze the performance of clustering algorithms on the Human Activity Recognition dataset:
+\begin{itemize}
+\item Model A: K-Means Clustering.
+\item Model B: DBSCAN (Density-Based Spatial Clustering of Applications with Noise).
+\item Model C: Hierarchical Agglomerative Clustering (HAC).
+\end{itemize}
+
+\section{Preprocessing Steps}
+\begin{itemize}
+\item Load the datasets.
+\item Handle missing values.
+\item Encode categorical labels.
+\item Apply normalization or standardization.
+\item Perform exploratory data analysis (EDA).
+\item Visualize feature distributions.
+\item Apply dimensionality reduction using PCA/t-SNE for visualization.
+\end{itemize}
+
+\section{Code}
+\begin{lstlisting}[language=Python]
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz
+from scipy.cluster.hierarchy import linkage, dendrogram
+
+x = pd.read_csv("UCI HAR Dataset/features.csv")
+y = pd.read_csv("UCI HAR Dataset/activity_labels.csv")
+
+print(x.head())
+print(y.head())
+print(x.shape)
+print(y.shape)
+print("Missing Values in X :", x.isnull().sum().sum())
+print("Missing Values in Y :", y.isnull().sum().sum())
+\end{lstlisting}
+
+\section{Standardization and PCA}
+\begin{lstlisting}[language=Python]
+print(y[0].unique())
+
+scaler = StandardScaler()
+x_scaled = scaler.fit_transform(x)
+
+pca = PCA(n_components=2)
+x_pca = pca.fit_transform(x_scaled)
+
+print(x_scaled.shape)
+print(x_pca.shape)
+\end{lstlisting}
+
+\section{K-Means Clustering}
+\begin{lstlisting}[language=Python]
+kmeans = KMeans(n_clusters=6, random_state=42)
+kmeans_labels = kmeans.fit_predict(x_scaled)
+
+kmeans_sil = silhouette_score(x_scaled, kmeans_labels)
+kmeans_db = davies_bouldin_score(x_scaled, kmeans_labels)
+kmeans_ch = calinski_harabasz_score(x_scaled, kmeans_labels)
+
+kmeans_ari = adjusted_rand_score(
+    y.values.ravel(), kmeans_labels)
+
+kmeans_nmi = normalized_mutual_info_score(
+    y.values.ravel(), kmeans_labels)
+
+print("Silhouette :", kmeans_sil)
+print("Davies-Bouldin :", kmeans_db)
+print("Calinski-Harabasz :", kmeans_ch)
+print("ARI :", kmeans_ari)
+print("NMI :", kmeans_nmi)
+\end{lstlisting}
+
+\subsection{K-Means Results}
+\begin{verbatim}
+Silhouette : 0.1086410631864108
+Davies-Bouldin : 2.3579675526882222
+Calinski-Harabasz : 1862.506263577485
+ARI : 0.41971368603551157
+NMI : 0.5589238295237167
+\end{verbatim}
+
+\subsection{Elbow Method}
+\begin{lstlisting}[language=Python]
+wcss = []
+silhoue_score = []
+
+for k in range(2,9,1):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(x_scaled)
+    wcss.append(kmeans.inertia_)
+
+    labels = kmeans.fit_predict(x_scaled)
+    score = silhouette_score(x_scaled, labels)
+    silhoue_score.append(score)
+
+result_table = pd.DataFrame({
+    "K": range(2,9),
+    "WCSS": wcss,
+    "Silhouette Score": silhoue_score
+})
+
+print(result_table)
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\caption{K-Means Results}
+\begin{tabular}{ccc}
+\toprule
+$K$ & WCSS & Silhouette Score\\
+\midrule
+2 & 2336223.79 & 0.39650\\
+3 & 2081849.62 & 0.327408\\
+4 & 1976475.19 & 0.161332\\
+5 & 1875068.02 & 0.13064\\
+6 & 1818790.06 & 0.10864\\
+7 & 1776518.72 & 0.11142\\
+8 & 1748685.34 & 0.08959\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{DBSCAN Clustering}
+\begin{lstlisting}[language=Python]
+dbscan = DBSCAN(eps=1.5, min_samples=10)
+db_labels = dbscan.fit_predict(x_pca)
+
+sb_cluster_list = set(db_labels)
+print(sb_cluster_list)
+
+noise = 0
+for ele in sb_cluster_list:
+    if ele == -1:
+        noise = noise + 1
+
+print(noise)
+\end{lstlisting}
+
+\begin{verbatim}
+{0, 1, 2, 3, -1}
+1
+\end{verbatim}
+
+\subsection{DBSCAN Evaluation}
+\begin{verbatim}
+Silhouette Score: 0.490960875197007
+Davies-Bouldin Index: 1.377583115821548
+Calinski-Harabasz Index: 6437.629875579848
+ARI: 0.3266064560591039
+NMI: 0.5230949748586399
+\end{verbatim}
+
+\section{Hierarchical Agglomerative Clustering}
+\begin{lstlisting}[language=Python]
+hac = AgglomerativeClustering(n_clusters=6, linkage='ward')
+hac_labels = hac.fit_predict(x_scaled)
+
+sample = x_scaled[:300]
+Z = linkage(sample, method='ward')
+
+plt.figure(figsize=(12,5))
+dendrogram(Z)
+plt.title("Hierarchical Clustering Dendrogram")
+plt.xlabel("Samples")
+plt.ylabel("Distance")
+plt.show()
+\end{lstlisting}
+
+\subsection{HAC Evaluation}
+\begin{verbatim}
+Silhouette: 0.08339649239977742
+Davies-Bouldin: 2.7857334406214562
+Calinski-Harabasz: 1730.8358392108255
+ARI: 0.2793864491481101
+NMI: 0.4544001173140205
+\end{verbatim}
+
+\section{Algorithm Comparison}
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Algorithm & Silhouette & Davies-Bouldin & Calinski-Harabasz & ARI & NMI\\
+\midrule
+K-Means & 0.108641 & 2.357968 & 1862.506264 & 0.419714 & 0.558924\\
+DBSCAN & 0.490961 & 1.377583 & 6437.629876 & 0.326606 & 0.523095\\
+Hierarchical & 0.083396 & 2.785733 & 1730.835840 & 0.279386 & 0.454400\\
+\bottomrule
+\end{tabular}
+\caption{Comparison of Clustering Algorithms}
+\end{table}
+
+\section{Observations}
+\begin{itemize}
+\item K-Means was evaluated for $k=2$ to $8$. WCSS decreased as the number of clusters increased.
+\item The highest Silhouette Score was obtained for $k=2$, with a score of 0.39650.
+\item As $k$ increased, WCSS continued to decrease, while the Silhouette Score generally decreased.
+\item PCA reduced the dimensionality of the dataset and made the data easier to visualize.
+\end{itemize}
+
+\section{Learning Outcomes}
+\begin{itemize}
+\item Understood the basic concept of unsupervised learning and clustering.
+\item Learned to preprocess Human Activity Recognition data before clustering.
+\item Understood how K-Means groups data points based on similarity.
+\item Learned how the Elbow Method and WCSS can be used to study the suitable number of clusters.
+\item Learned how the Silhouette Score evaluates cluster separation.
+\item Understood the basic working of DBSCAN and how it can identify dense regions and noise points.
+\end{itemize}
+
+\end{document}
